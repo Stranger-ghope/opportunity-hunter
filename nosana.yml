@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────
+# Nosana Job Definition
+# Deploy the Opportunity Hunter on Nosana decentralized GPU network
+# Docs: https://docs.nosana.io/inference/
+# ─────────────────────────────────────────────
+
+version: "1"
+
+type: container
+
+meta:
+  trigger: api                    # Trigger via Nosana API
+
+ops:
+  - id: opportunity-hunter
+    type: container/run
+    args:
+      image: your-dockerhub-username/opportunity-hunter:latest
+      gpu: true                   # Enable GPU for accelerated inference
+      expose: 3000                # Expose dashboard port
+      env:
+        - INFERENCE_PROVIDER=nosana
+        - MODEL_NAME=Qwen/Qwen3.5-27B-Instruct-AWQ
+        - NOSANA_API_URL=https://inference.nosana.io/v1
+        - PIPELINE_INTERVAL_MINUTES=60
+        - SCORE_THRESHOLD=60
+        - DASHBOARD_PORT=3000
+        - DATA_DIR=/app/data
+        - LOG_LEVEL=info
+      # Secrets — set via Nosana job secrets, not plaintext
+      secrets:
+        - NOSANA_API_KEY
+        - REDDIT_CLIENT_ID
+        - REDDIT_CLIENT_SECRET
+        - EMAIL_USER
+        - EMAIL_PASSWORD
+      resources:
+        # Minimum 8GB VRAM for Qwen2.5-72B-AWQ-4bit via external inference
+        # (inference runs on Nosana inference endpoint, not this container)
+        memory: 4096Mi
+        cpu: 2

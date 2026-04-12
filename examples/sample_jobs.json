@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Senior Solidity Developer for DeFi Yield Protocol",
+    "source": "manual:example",
+    "url": "https://cryptojobslist.com/example-1",
+    "budget": "$120-150/hr",
+    "skills": ["Solidity", "Hardhat", "DeFi", "TypeScript"],
+    "raw_text": "We are looking for a senior Solidity developer to join our DeFi yield protocol team. You will design and implement smart contracts for automated yield strategies on Ethereum mainnet.\n\nRequirements:\n- 3+ years Solidity experience\n- Deep knowledge of DeFi protocols (Aave, Compound, Uniswap)\n- Experience with Hardhat/Foundry testing frameworks\n- Understanding of MEV, flash loans, reentrancy attacks\n- TypeScript for off-chain tooling\n\nBudget: $120-150/hr contract, 20-30 hours/week, ongoing\nRemote friendly. Immediate start. UTC+0 to UTC+8 preferred.\n\nApply with your GitHub and 2 relevant DeFi projects."
+  },
+  {
+    "title": "ElizaOS Agent Developer — Autonomous Trading Bot",
+    "source": "manual:example",
+    "url": "https://web3.career/example-2",
+    "budget": "$8,000 fixed",
+    "skills": ["ElizaOS", "TypeScript", "Node.js", "Web3", "Trading"],
+    "raw_text": "We need an experienced ElizaOS developer to build an autonomous trading agent that monitors on-chain signals and executes trades on Uniswap v3.\n\nScope:\n- ElizaOS v2 agent architecture\n- On-chain data ingestion (price feeds, liquidity events)\n- Trade execution via Ethers.js\n- Risk management rules\n- Docker deployment\n\nBudget: $8,000 fixed price, 3-week timeline. Milestone-based payment.\n\nWe want this done ASAP — ideally start within the week."
+  },
+  {
+    "title": "React + Node.js Developer for SaaS Dashboard",
+    "source": "manual:example",
+    "url": "https://weworkremotely.com/example-3",
+    "budget": "$60-80/hr",
+    "skills": ["React", "Node.js", "TypeScript", "PostgreSQL"],
+    "raw_text": "Looking for a full-stack developer to build a customer analytics dashboard for our B2B SaaS platform.\n\nTech stack: React + TypeScript frontend, Node.js/Express API, PostgreSQL.\n\nFeatures needed:\n- Real-time metrics dashboard\n- User segmentation filters\n- CSV/PDF export\n- Role-based access control\n\nRate: $60-80/hr. Estimated 120 hours of work. Remote, async-friendly."
+  },
+  {
+    "title": "AI Python Developer — LLM Fine-Tuning Pipeline",
+    "source": "manual:example",
+    "url": "https://remoteok.com/example-4",
+    "budget": "$100/hr",
+    "skills": ["Python", "LLM", "ML", "Docker", "AWS"],
+    "raw_text": "We need a Python ML engineer to build a fine-tuning pipeline for our domain-specific LLM.\n\nResponsibilities:\n- Set up LoRA/QLoRA fine-tuning with Hugging Face\n- Data preprocessing and cleaning pipeline\n- Evaluation benchmarks\n- Deploy via Docker on AWS\n\nRate: ~$100/hr, 40 hours initial scope with potential for long-term engagement.\nMust have previous LLM fine-tuning experience."
+  },
+  {
+    "title": "Junior WordPress developer needed",
+    "source": "manual:example",
+    "url": "https://reddit.com/example-5",
+    "budget": "$10/hr",
+    "skills": ["WordPress", "PHP"],
+    "raw_text": "Need a WordPress developer to help maintain our company blog. Mostly plugin updates, theme customization, and occasional page creation. No complex development. Entry level is fine. $10/hr, ongoing small tasks. Anyone interested?"
+  }
+]

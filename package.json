@@ -1,0 +1,45 @@
+{
+  "name": "opportunity-hunter",
+  "version": "1.0.0",
+  "description": "Autonomous Opportunity Hunter Agent - ElizaOS v2 Multi-Agent System",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "dev:watch": "nodemon --exec ts-node src/index.ts",
+    "dashboard": "ts-node src/dashboard/server.ts",
+    "pipeline": "ts-node src/pipeline.ts",
+    "cli": "ts-node src/cli.ts",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@elizaos/core": "^1.7.2",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "imap": "^0.8.17",
+    "mailparser": "^3.6.5",
+    "node-cron": "^3.0.3",
+    "node-sqlite3-wasm": "^0.8.18",
+    "rss-parser": "^3.13.0",
+    "socket.io": "^4.6.1",
+    "uuid": "^9.0.0",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/imap": "^0.8.40",
+    "@types/mailparser": "^3.4.4",
+    "@types/node": "^20.10.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/uuid": "^9.0.7",
+    "nodemon": "^3.0.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

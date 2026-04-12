@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opportunity Hunter — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    :root { --bg: #0f1117; --card: #1a1d27; --border: #2a2d3e; --accent: #6366f1; }
+    body { background: var(--bg); color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+    .score-bar { height: 4px; border-radius: 2px; background: #2a2d3e; }
+    .score-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+    .badge { padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .badge-apply { background: #14532d33; color: #4ade80; border: 1px solid #16a34a44; }
+    .badge-save { background: #1e3a5f33; color: #60a5fa; border: 1px solid #1d4ed844; }
+    .badge-ignore { background: #2d1f1f33; color: #f87171; border: 1px solid #dc262644; }
+    .badge-new { background: #2a2d3e; color: #94a3b8; border: 1px solid #374151; }
+    .toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; transition: all 0.3s ease; }
+    .spinner { width: 16px; height: 16px; border: 2px solid #6366f133; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tab-btn { padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: var(--accent); color: white; }
+    .tab-btn:not(.active) { color: #94a3b8; }
+    .tab-btn:not(.active):hover { background: #2a2d3e; color: #e2e8f0; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    .proposal-box { background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<header class="border-b border-[#2a2d3e] px-6 py-4 flex items-center justify-between sticky top-0 z-50" style="background: #0f1117cc; backdrop-filter: blur(12px);">
+  <div class="flex items-center gap-3">
+    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-lg" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">🎯</div>
+    <div>
+      <h1 class="text-white font-bold text-lg leading-none">Opportunity Hunter</h1>
+      <p class="text-xs text-slate-500 mt-0.5">Autonomous Agent Dashboard</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-3">
+    <div id="connectionStatus" class="flex items-center gap-2 text-xs text-slate-500">
+      <div class="w-2 h-2 rounded-full bg-slate-600"></div> Connecting...
+    </div>
+    <button onclick="runPipeline()" id="runBtn"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90"
+      style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+      <span id="runIcon">▶</span> Run Pipeline
+    </button>
+  </div>
+</header>
+
+<!-- Stats Bar -->
+<div class="px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4" id="statsBar">
+  <div class="card p-4">
+    <p class="text-xs text-slate-500 mb-1">Total Found</p>
+    <p class="text-2xl font-bold text-white" id="statTotal">—</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-xs text-slate-500 mb-1">Scored</p>
+    <p class="text-2xl font-bold text-indigo-400" id="statScored">—</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-xs text-slate-500 mb-1">Applied</p>
+    <p class="text-2xl font-bold text-green-400" id="statApplied">—</p>
+  </div>
+  <div class="card p-4">
+    <p class="text-xs text-slate-500 mb-1">Accepted</p>
+    <p class="text-2xl font-bold text-yellow-400" id="statAccepted">—</p>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="px-6 flex gap-2 mb-4">
+  <button class="tab-btn active" onclick="showTab('opportunities', this)">Opportunities</button>
+  <button class="tab-btn" onclick="showTab('pipeline', this)">Pipeline Runs</button>
+  <button class="tab-btn" onclick="showTab('ingest', this)">Manual Ingest</button>
+  <button class="tab-btn" onclick="showTab('insights', this)">Insights</button>
+</div>
+
+<!-- Main Content -->
+<main class="px-6 pb-12">
+
+  <!-- Opportunities Tab -->
+  <div id="tab-opportunities">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex gap-2">
+        <select id="filterStatus" onchange="filterOpportunities()" class="text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-slate-300" style="background: #1a1d27;">
+          <option value="">All Status</option>
+          <option value="new">New</option>
+          <option value="scored">Scored</option>
+          <option value="proposal_generated">Proposal Ready</option>
+          <option value="applied">Applied</option>
+          <option value="saved">Saved</option>
+          <option value="ignored">Ignored</option>
+        </select>
+        <input id="searchBox" oninput="filterOpportunities()" placeholder="Search..." class="text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-slate-300 w-48" style="background: #1a1d27;" />
+      </div>
+      <span id="oppCount" class="text-xs text-slate-500"></span>
+    </div>
+    <div id="opportunitiesList" class="space-y-3"></div>
+    <div id="oppEmpty" class="hidden text-center py-16 text-slate-600">
+      <p class="text-4xl mb-3">🔍</p>
+      <p class="text-lg">No opportunities yet</p>
+      <p class="text-sm mt-1">Run the pipeline to start discovering opportunities</p>
+    </div>
+  </div>
+
+  <!-- Pipeline Runs Tab -->
+  <div id="tab-pipeline" class="hidden">
+    <div id="pipelineList" class="space-y-3"></div>
+  </div>
+
+  <!-- Manual Ingest Tab -->
+  <div id="tab-ingest" class="hidden max-w-2xl">
+    <div class="card p-6">
+      <h3 class="text-white font-semibold mb-4">Paste a Job Posting</h3>
+      <div class="space-y-4">
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Title *</label>
+          <input id="ingestTitle" placeholder="e.g. Senior TypeScript Developer" class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white" style="background: #111827;" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">URL (optional)</label>
+          <input id="ingestUrl" placeholder="https://..." class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white" style="background: #111827;" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Full Description *</label>
+          <textarea id="ingestText" rows="8" placeholder="Paste the full job description here..." class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white resize-y" style="background: #111827;"></textarea>
+        </div>
+        <button onclick="ingestManual()" class="w-full py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+          Ingest & Process
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insights Tab -->
+  <div id="tab-insights" class="hidden">
+    <div id="insightsContent" class="space-y-4">
+      <div class="text-center py-8 text-slate-500">
+        <div class="spinner mx-auto mb-3"></div>
+        Loading insights...
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Opportunity Detail Modal -->
+<div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+  <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto" id="modalContent">
+    <div class="flex items-start justify-between p-6 pb-4 border-b border-[#2a2d3e]">
+      <div>
+        <h2 class="text-white font-bold text-lg" id="modalTitle"></h2>
+        <p class="text-sm text-slate-400 mt-1" id="modalMeta"></p>
+      </div>
+      <button onclick="closeModal()" class="text-slate-500 hover:text-white text-xl leading-none ml-4">✕</button>
+    </div>
+    <div class="p-6 space-y-5" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden">
+  <div class="card px-4 py-3 text-sm flex items-center gap-2 text-white"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+let allOpportunities = [];
+const socket = io();
+
+// ─────────────────────────────────────────────
+// Socket.IO
+// ─────────────────────────────────────────────
+socket.on('connect', () => updateConnectionStatus(true));
+socket.on('disconnect', () => updateConnectionStatus(false));
+socket.on('stats', (data) => updateStats(data));
+socket.on('opportunity:new', () => { loadOpportunities(); loadStats(); });
+socket.on('opportunity:updated', () => { loadOpportunities(); loadStats(); });
+socket.on('pipeline:complete', (run) => {
+  setRunning(false);
+  showToast(`✅ Pipeline complete — ${run.opportunities_found} found, ${run.proposals_generated} proposals`);
+  loadOpportunities();
+  loadStats();
+  loadPipelineRuns();
+});
+socket.on('pipeline:error', (data) => {
+  setRunning(false);
+  showToast(`❌ Pipeline error: ${data.message}`, true);
+});
+socket.on('outcome:recorded', () => loadOpportunities());
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadOpportunities();
+  loadStats();
+  loadPipelineRuns();
+});
+
+// ─────────────────────────────────────────────
+// API calls
+// ─────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  return res.json();
+}
+
+async function loadOpportunities() {
+  const data = await api('GET', '/api/opportunities');
+  allOpportunities = data.data || [];
+  filterOpportunities();
+}
+
+async function loadStats() {
+  const data = await api('GET', '/api/stats');
+  if (data.success) updateStats(data.data.stats);
+}
+
+async function loadPipelineRuns() {
+  const data = await api('GET', '/api/pipeline/runs');
+  renderPipelineRuns(data.data || []);
+}
+
+async function loadInsights() {
+  document.getElementById('insightsContent').innerHTML = '<div class="text-center py-8 text-slate-500"><div class="spinner mx-auto mb-3"></div>Analyzing...</div>';
+  const data = await api('GET', '/api/feedback/insights');
+  if (data.success) renderInsights(data.data);
+}
+
+async function runPipeline() {
+  setRunning(true);
+  showToast('🚀 Pipeline started...');
+  await api('POST', '/api/pipeline/run');
+}
+
+async function approveDeal(id) {
+  await api('POST', `/api/opportunities/${id}/approve`);
+  showToast('✅ Marked as applied');
+  loadOpportunities();
+}
+
+async function rejectDeal(id) {
+  await api('POST', `/api/opportunities/${id}/reject`);
+  showToast('🗑️ Marked as ignored');
+  loadOpportunities();
+}
+
+async function ingestManual() {
+  const title = document.getElementById('ingestTitle').value.trim();
+  const raw_text = document.getElementById('ingestText').value.trim();
+  const url = document.getElementById('ingestUrl').value.trim();
+  if (!title || !raw_text) { showToast('Title and description are required', true); return; }
+  const data = await api('POST', '/api/ingest', { title, raw_text, url: url || undefined });
+  if (data.success) {
+    showToast(`✅ Ingested: "${title}"`);
+    document.getElementById('ingestTitle').value = '';
+    document.getElementById('ingestText').value = '';
+    document.getElementById('ingestUrl').value = '';
+    loadOpportunities();
+    showTab('opportunities', document.querySelector('.tab-btn'));
+  } else showToast(`Error: ${data.error}`, true);
+}
+
+async function recordOutcome(oppId, outcome) {
+  const notes = prompt('Any feedback notes? (optional)') || '';
+  await api('POST', '/api/outcomes', { opportunity_id: oppId, outcome, feedback_notes: notes });
+  showToast(`📊 Outcome recorded: ${outcome}`);
+  loadOpportunities();
+  closeModal();
+}
+
+// ─────────────────────────────────────────────
+// Render
+// ─────────────────────────────────────────────
+function filterOpportunities() {
+  const statusFilter = document.getElementById('filterStatus').value;
+  const search = document.getElementById('searchBox').value.toLowerCase();
+
+  let filtered = allOpportunities;
+  if (statusFilter) filtered = filtered.filter(o => o.status === statusFilter);
+  if (search) filtered = filtered.filter(o =>
+    o.title.toLowerCase().includes(search) ||
+    o.source.toLowerCase().includes(search) ||
+    (o.skills || []).some(s => s.toLowerCase().includes(search))
+  );
+
+  document.getElementById('oppCount').textContent = `${filtered.length} of ${allOpportunities.length}`;
+  renderOpportunities(filtered);
+}
+
+function renderOpportunities(opps) {
+  const list = document.getElementById('opportunitiesList');
+  const empty = document.getElementById('oppEmpty');
+
+  if (opps.length === 0) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  list.innerHTML = opps.map(opp => `
+    <div class="card p-4 cursor-pointer hover:border-indigo-500/50 transition-all" onclick="openModal('${opp.id}')">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="badge badge-${badgeClass(opp.action, opp.status)}">${opp.action || opp.status}</span>
+            ${(opp.tags || []).slice(0, 3).map(t => `<span class="badge" style="background:#1a1d27;color:#6366f1;border-color:#374151">${t}</span>`).join('')}
+          </div>
+          <h3 class="text-white font-medium mt-2 text-sm leading-snug">${escHtml(opp.title)}</h3>
+          <div class="flex items-center gap-3 mt-1.5 text-xs text-slate-500 flex-wrap">
+            <span>📡 ${escHtml(opp.source)}</span>
+            ${opp.budget ? `<span>💰 ${escHtml(opp.budget)}</span>` : ''}
+            <span>🕐 ${timeAgo(opp.timestamp)}</span>
+          </div>
+        </div>
+        <div class="text-right flex-shrink-0">
+          ${opp.score != null ? `
+            <div class="text-lg font-bold ${scoreColor(opp.score)}">${opp.score}</div>
+            <div class="score-bar w-16 mt-1"><div class="score-fill ${scoreBg(opp.score)}" style="width:${opp.score}%"></div></div>
+          ` : '<span class="text-xs text-slate-600">unscored</span>'}
+        </div>
+      </div>
+      ${opp.skills?.length ? `<div class="flex flex-wrap gap-1 mt-2">${opp.skills.slice(0,6).map(s => `<span class="text-xs px-2 py-0.5 rounded" style="background:#1e3a5f33;color:#60a5fa">${escHtml(s)}</span>`).join('')}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderPipelineRuns(runs) {
+  const list = document.getElementById('pipelineList');
+  if (!runs.length) { list.innerHTML = '<div class="text-center py-12 text-slate-600">No pipeline runs yet</div>'; return; }
+  list.innerHTML = runs.map(run => `
+    <div class="card p-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-2.5 h-2.5 rounded-full ${run.status === 'completed' ? 'bg-green-400' : run.status === 'failed' ? 'bg-red-400' : 'bg-yellow-400'}"></div>
+          <div>
+            <p class="text-white text-sm font-medium">${new Date(run.started_at).toLocaleString()}</p>
+            <p class="text-xs text-slate-500 mt-0.5">${(run.sources_checked || []).join(' · ')}</p>
+          </div>
+        </div>
+        <div class="text-right text-xs text-slate-400 space-y-0.5">
+          <div>Found: <span class="text-white">${run.opportunities_found}</span></div>
+          <div>Proposals: <span class="text-white">${run.proposals_generated}</span></div>
+          <div class="flex gap-2">
+            <span class="text-green-400">A:${(run.actions_taken||{}).APPLY||0}</span>
+            <span class="text-blue-400">S:${(run.actions_taken||{}).SAVE||0}</span>
+            <span class="text-red-400">I:${(run.actions_taken||{}).IGNORE||0}</span>
+          </div>
+        </div>
+      </div>
+      ${run.errors?.length ? `<div class="mt-2 text-xs text-red-400">⚠️ ${run.errors.length} error(s)</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function renderInsights(insights) {
+  if (!insights) { document.getElementById('insightsContent').innerHTML = '<div class="text-slate-500 text-center py-8">No insights available yet.</div>'; return; }
+  document.getElementById('insightsContent').innerHTML = `
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div class="card p-4"><p class="text-xs text-slate-500 mb-1">Applied</p><p class="text-2xl font-bold text-white">${insights.total_applied}</p></div>
+      <div class="card p-4"><p class="text-xs text-slate-500 mb-1">Accept Rate</p><p class="text-2xl font-bold text-green-400">${Math.round(insights.accepted_rate * 100)}%</p></div>
+      <div class="card p-4"><p class="text-xs text-slate-500 mb-1">Avg Win Score</p><p class="text-2xl font-bold text-indigo-400">${insights.avg_winning_score}</p></div>
+    </div>
+    <div class="card p-5">
+      <h4 class="text-white font-semibold mb-3">🏆 Top Winning Skills</h4>
+      <div class="flex flex-wrap gap-2">${(insights.top_winning_skills||[]).map(s => `<span class="badge" style="background:#14532d33;color:#4ade80;border-color:#16a34a44">${s}</span>`).join('') || '<span class="text-slate-500 text-sm">Not enough data yet</span>'}</div>
+    </div>
+    <div class="card p-5">
+      <h4 class="text-white font-semibold mb-3">🎯 Proposal Style Notes</h4>
+      <p class="text-sm text-slate-300 leading-relaxed">${insights.proposal_style_notes || 'No notes yet'}</p>
+    </div>
+  `;
+}
+
+async function openModal(id) {
+  const data = await api('GET', `/api/opportunities/${id}`);
+  if (!data.success) return;
+  const opp = data.data;
+  const proposal = opp.proposal;
+
+  document.getElementById('modalTitle').textContent = opp.title;
+  document.getElementById('modalMeta').textContent = `${opp.source} · ${timeAgo(opp.timestamp)}${opp.budget ? ' · ' + opp.budget : ''}`;
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="flex items-center gap-3">
+      <span class="badge badge-${badgeClass(opp.action, opp.status)}">${opp.action || opp.status}</span>
+      ${opp.score != null ? `<span class="text-2xl font-bold ${scoreColor(opp.score)}">${opp.score}<span class="text-xs text-slate-500">/100</span></span>` : ''}
+      ${opp.url && opp.url.startsWith('http') ? `<a href="${opp.url}" target="_blank" class="text-xs text-indigo-400 hover:underline ml-auto">View Original →</a>` : ''}
+    </div>
+
+    ${opp.score_breakdown ? `
+    <div>
+      <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Score Breakdown</p>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        ${Object.entries(opp.score_breakdown).map(([k,v]) => `
+          <div class="flex items-center justify-between px-3 py-1.5 rounded-lg" style="background:#111827">
+            <span class="text-slate-400">${k.replace(/_/g,' ')}</span>
+            <span class="text-white font-bold">${v}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+
+    ${opp.score_reasoning ? `
+    <div>
+      <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Reasoning</p>
+      <p class="text-sm text-slate-300 leading-relaxed">${escHtml(opp.score_reasoning)}</p>
+    </div>` : ''}
+
+    ${opp.skills?.length ? `
+    <div>
+      <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Skills</p>
+      <div class="flex flex-wrap gap-1">${opp.skills.map(s => `<span class="text-xs px-2 py-0.5 rounded" style="background:#1e3a5f33;color:#60a5fa">${escHtml(s)}</span>`).join('')}</div>
+    </div>` : ''}
+
+    ${proposal ? `
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs text-slate-500 uppercase tracking-wider">Generated Proposal</p>
+        <span class="text-xs text-slate-600">v${proposal.version} · ${proposal.word_count} words</span>
+      </div>
+      <div class="proposal-box text-slate-300">${escHtml(proposal.improved_version || proposal.full_text)}</div>
+      ${proposal.critic_feedback ? `<div class="mt-2 text-xs text-slate-500 italic">${escHtml(proposal.critic_feedback.split('\n')[0])}</div>` : ''}
+    </div>` : ''}
+
+    <div class="flex flex-wrap gap-2 pt-2 border-t border-[#2a2d3e]">
+      ${opp.status !== 'applied' ? `<button onclick="approveDeal('${opp.id}')" class="px-4 py-2 rounded-lg text-sm font-medium" style="background:#14532d33;color:#4ade80;border:1px solid #16a34a44">✅ Mark Applied</button>` : ''}
+      ${opp.status !== 'ignored' ? `<button onclick="rejectDeal('${opp.id}')" class="px-4 py-2 rounded-lg text-sm font-medium" style="background:#2d1f1f33;color:#f87171;border:1px solid #dc262644">🗑️ Ignore</button>` : ''}
+      <button onclick="recordOutcome('${opp.id}','accepted')" class="px-4 py-2 rounded-lg text-sm font-medium" style="background:#1a1d27;color:#fbbf24;border:1px solid #374151">🏆 Accepted</button>
+      <button onclick="recordOutcome('${opp.id}','rejected')" class="px-4 py-2 rounded-lg text-sm font-medium" style="background:#1a1d27;color:#94a3b8;border:1px solid #374151">❌ Rejected</button>
+    </div>
+  `;
+
+  document.getElementById('modal').classList.remove('hidden');
+}
+
+function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+document.getElementById('modal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+function showTab(tab, btn) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('tab-' + tab).classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (tab === 'insights') loadInsights();
+  if (tab === 'pipeline') loadPipelineRuns();
+}
+
+function updateStats(stats) {
+  document.getElementById('statTotal').textContent = stats.total ?? '0';
+  document.getElementById('statScored').textContent = stats.scored ?? '0';
+  document.getElementById('statApplied').textContent = stats.applied ?? '0';
+  document.getElementById('statAccepted').textContent = stats.accepted ?? '0';
+}
+
+function updateConnectionStatus(connected) {
+  const el = document.getElementById('connectionStatus');
+  el.innerHTML = connected
+    ? '<div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div> Live'
+    : '<div class="w-2 h-2 rounded-full bg-red-400"></div> Disconnected';
+}
+
+function setRunning(running) {
+  const btn = document.getElementById('runBtn');
+  const icon = document.getElementById('runIcon');
+  btn.disabled = running;
+  btn.style.opacity = running ? '0.7' : '1';
+  icon.innerHTML = running ? '<div class="spinner"></div>' : '▶';
+}
+
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('toast');
+  toast.querySelector('div').textContent = msg;
+  toast.querySelector('div').style.borderColor = isError ? '#dc2626' : '#374151';
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 4000);
+}
+
+function badgeClass(action, status) {
+  if (action === 'APPLY' || status === 'applied') return 'apply';
+  if (action === 'SAVE' || status === 'saved') return 'save';
+  if (action === 'IGNORE' || status === 'ignored') return 'ignore';
+  return 'new';
+}
+
+function scoreColor(score) {
+  if (score >= 75) return 'text-green-400';
+  if (score >= 50) return 'text-yellow-400';
+  return 'text-red-400';
+}
+
+function scoreBg(score) {
+  if (score >= 75) return 'bg-green-400';
+  if (score >= 50) return 'bg-yellow-400';
+  return 'bg-red-400';
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const diff = Date.now() - new Date(ts).getTime();
+  const h = Math.floor(diff / 3600000);
+  if (h < 1) return 'just now';
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

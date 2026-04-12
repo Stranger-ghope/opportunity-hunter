@@ -1,0 +1,36 @@
+{
+  "name": "Alex Rivera",
+  "title": "Full-Stack AI Engineer & Web3 Developer",
+  "skills": [
+    "TypeScript", "Python", "React", "Node.js", "Solidity",
+    "ElizaOS", "LangChain", "OpenAI API", "Docker", "PostgreSQL",
+    "REST APIs", "GraphQL", "AWS", "Nosana", "Ethereum", "Rust"
+  ],
+  "experience_years": 6,
+  "niches": [
+    "AI agent development",
+    "Web3 / DeFi integrations",
+    "Full-stack SaaS",
+    "Automation & bots",
+    "Smart contract development"
+  ],
+  "hourly_rate_min": 75,
+  "hourly_rate_max": 150,
+  "preferred_project_types": [
+    "freelance",
+    "contract",
+    "bounty",
+    "part-time"
+  ],
+  "portfolio_url": "https://alexrivera.dev",
+  "bio": "I build autonomous AI systems, Web3 applications, and high-performance APIs. I specialize in ElizaOS agent frameworks, decentralized compute pipelines, and LLM-powered product features. My work ships fast, is well-documented, and scales.",
+  "tone": "professional",
+  "avoid_keywords": [
+    "unpaid",
+    "intern",
+    "entry level",
+    "no pay",
+    "revenue share only",
+    "equity only"
+  ]
+}

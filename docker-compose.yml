@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  opportunity-hunter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: opportunity-hunter
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persist SQLite database and logs
+      - opportunity_data:/app/data
+      # Mount .env for local development (do not ship in production)
+      - ./.env:/app/.env:ro
+    environment:
+      - NODE_ENV=production
+      - DATA_DIR=/app/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  opportunity_data:
+    driver: local

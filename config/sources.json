@@ -1,0 +1,87 @@
+{
+  "rss_feeds": [
+    {
+      "name": "HackerNews Hiring",
+      "url": "https://hnrss.org/jobs",
+      "category": "tech",
+      "enabled": true,
+      "skill_hints": ["TypeScript", "Python", "React", "Node.js"]
+    },
+    {
+      "name": "RemoteOK RSS",
+      "url": "https://remoteok.com/remote-jobs.rss",
+      "category": "remote",
+      "enabled": true,
+      "skill_hints": ["AI", "Web3", "Full-stack"]
+    },
+    {
+      "name": "We Work Remotely - Programming",
+      "url": "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+      "category": "programming",
+      "enabled": true
+    },
+    {
+      "name": "We Work Remotely - Full-Stack",
+      "url": "https://weworkremotely.com/remote-jobs.rss",
+      "category": "remote",
+      "enabled": true
+    },
+    {
+      "name": "Crypto Jobs List RSS",
+      "url": "https://cryptojobslist.com/rss.xml",
+      "category": "web3",
+      "enabled": true,
+      "skill_hints": ["Solidity", "Web3", "Ethereum", "DeFi"]
+    },
+    {
+      "name": "Web3 Career RSS",
+      "url": "https://web3.career/feed",
+      "category": "web3",
+      "enabled": false,
+      "skill_hints": ["Solidity", "Rust", "Web3"]
+    },
+    {
+      "name": "GitHub Jobs RSS (archived mirror)",
+      "url": "https://jobs.github.com/positions.json",
+      "category": "tech",
+      "enabled": false
+    }
+  ],
+  "reddit_sources": [
+    {
+      "subreddit": "forhire",
+      "flairs": ["Hiring"],
+      "keyword_filter": ["AI", "TypeScript", "React", "Node", "Python", "Web3", "Solidity", "developer"],
+      "limit": 25,
+      "enabled": true
+    },
+    {
+      "subreddit": "slavelabour",
+      "flairs": [],
+      "keyword_filter": ["developer", "programmer", "AI", "automation"],
+      "limit": 20,
+      "enabled": true
+    },
+    {
+      "subreddit": "freelance",
+      "flairs": [],
+      "keyword_filter": ["developer", "engineer", "AI", "web", "contract"],
+      "limit": 20,
+      "enabled": true
+    },
+    {
+      "subreddit": "ethereum",
+      "flairs": ["Jobs"],
+      "keyword_filter": ["developer", "smart contract", "Solidity", "DeFi"],
+      "limit": 15,
+      "enabled": true
+    },
+    {
+      "subreddit": "web3",
+      "flairs": [],
+      "keyword_filter": ["hiring", "job", "bounty", "developer"],
+      "limit": 15,
+      "enabled": true
+    }
+  ]
+}
