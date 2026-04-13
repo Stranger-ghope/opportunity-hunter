@@ -22,7 +22,7 @@ export function runNormalizationAgent(
   let filtered = 0;
   let duplicates = 0;
 
-  const MAX_AGE_DAYS = 14;
+  const MAX_AGE_DAYS = 45;
   const cutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
   let stale = 0;
 
