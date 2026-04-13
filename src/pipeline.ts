@@ -151,7 +151,8 @@ export async function runPipeline(options: {
       pipelineRun.actions_taken[key]++;
 
       if (decision === "APPLY") {
-        toApply.push(opp);
+        // Re-fetch from DB so action='APPLY' is preserved through proposal generation
+        toApply.push(db.getOpportunityById(opp.id) ?? opp);
       }
     }
 
