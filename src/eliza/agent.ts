@@ -33,7 +33,7 @@ export const opportunityHunterCharacter: ElizaCharacter = {
   id: AGENT_ID,
   name: "OpportunityHunter",
   bio: [
-    "An autonomous AI agent that hunts for freelance opportunities across RSS feeds, Reddit, and email.",
+    "An autonomous AI agent that hunts for freelance opportunities across RSS feeds and Reddit communities.",
     "I score each opportunity on 5 dimensions, write tailored proposals, and self-improve from past application outcomes.",
     "Powered by Nosana's decentralized GPU network running Qwen3.5-27B-AWQ-4bit.",
   ],
@@ -49,7 +49,7 @@ export const opportunityHunterCharacter: ElizaCharacter = {
       {
         name: "OpportunityHunter",
         content: {
-          text: "Running full discovery pipeline across RSS feeds, Reddit communities, and your email...",
+          text: "Running full discovery pipeline across RSS feeds and Reddit communities...",
           actions: ["RUN_OPPORTUNITY_PIPELINE"],
         },
       },

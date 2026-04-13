@@ -41,7 +41,7 @@ async function main(): Promise<void> {
         const text = await readMultilineInput("Paste job description (Ctrl+D when done):\n");
         const opp = ingestRawText(text);
         console.log(`\n✅ Ingested: "${opp.title}" (${opp.id})`);
-        console.log("Run 'ts-node src/cli.ts run --skip=rss --skip=reddit --skip=email' to process it.");
+        console.log("Run 'ts-node src/cli.ts run --skip=rss --skip=reddit' to process it.");
       } else if (subCmd) {
         const opps = ingestJSONFile(subCmd);
         console.log(`\n✅ Ingested ${opps.length} opportunities from ${subCmd}`);
@@ -126,7 +126,7 @@ async function main(): Promise<void> {
 🎯 Opportunity Hunter CLI
 
 Commands:
-  run [--dry-run] [--skip=rss] [--skip=reddit] [--skip=email]
+  run [--dry-run] [--skip=rss] [--skip=reddit]
   ingest <file.json>
   ingest --text
   list [--apply]

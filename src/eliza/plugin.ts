@@ -84,7 +84,7 @@ const runPipelineAction: Action = {
   name: "RUN_OPPORTUNITY_PIPELINE",
   similes: ["HUNT_OPPORTUNITIES", "FIND_JOBS", "SCAN_FOR_OPPORTUNITIES", "FIND_GIGS"],
   description:
-    "Run the full autonomous opportunity pipeline: ingest from RSS, Reddit, and email; normalize, score with multi-dimensional LLM analysis, generate tailored proposals, and make APPLY/SAVE/IGNORE decisions.",
+    "Run the full autonomous opportunity pipeline: ingest from RSS feeds and Reddit; normalize, score with multi-dimensional LLM analysis, generate tailored proposals, and make APPLY/SAVE/IGNORE decisions.",
   validate: async (): Promise<boolean> => true,
   handler: async (
     _runtime: IAgentRuntime,
@@ -116,7 +116,7 @@ const runPipelineAction: Action = {
       {
         name: "OpportunityHunter",
         content: {
-          text: "Running full pipeline — scanning RSS feeds, Reddit, and email for opportunities...",
+          text: "Running full pipeline — scanning RSS feeds and Reddit for opportunities...",
           actions: ["RUN_OPPORTUNITY_PIPELINE"],
         },
       },
@@ -328,7 +328,7 @@ const apiRoutes: Route[] = [
 export const opportunityHunterPlugin: Plugin = {
   name: "opportunity-hunter",
   description:
-    "Autonomous opportunity discovery: scans RSS, Reddit, and email; scores with multi-dimensional LLM analysis; generates tailored proposals; self-improves via outcome feedback. Powered by Nosana GPU inference.",
+    "Autonomous opportunity discovery: scans RSS feeds and Reddit; scores with multi-dimensional LLM analysis; generates tailored proposals; self-improves via outcome feedback. Powered by Nosana GPU inference.",
 
   actions: [
     runPipelineAction,

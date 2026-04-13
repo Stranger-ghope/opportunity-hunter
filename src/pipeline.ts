@@ -17,7 +17,6 @@ import { db } from "./memory/database";
 // Source Agents
 import { runRSSAgent } from "./agents/sources/rssAgent";
 import { runRedditAgent } from "./agents/sources/redditAgent";
-import { runEmailAgent } from "./agents/sources/emailAgent";
 
 // Processing Agents
 import { runNormalizationAgent } from "./agents/normalizationAgent";
@@ -92,12 +91,6 @@ export async function runPipeline(options: {
       const redditOpps = await runRedditAgent(reddit_sources);
       rawOpportunities.push(...redditOpps);
       pipelineRun.sources_checked.push("reddit");
-    }
-
-    if (!options.skipSources?.includes("email")) {
-      const emailOpps = await runEmailAgent();
-      rawOpportunities.push(...emailOpps);
-      pipelineRun.sources_checked.push("email");
     }
 
     logger.info(`\n  Raw opportunities collected: ${rawOpportunities.length}`);
