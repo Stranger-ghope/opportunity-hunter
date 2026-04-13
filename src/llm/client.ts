@@ -32,6 +32,14 @@ class LLMClient {
   private modelName: string;
   private http: AxiosInstance;
   private baseUrl: string;
+  private consecutiveFailures = 0;
+  private circuitOpen = false;
+  private readonly CIRCUIT_THRESHOLD = 5;
+
+  resetCircuit() {
+    this.consecutiveFailures = 0;
+    this.circuitOpen = false;
+  }
 
   constructor() {
     this.provider = (process.env.INFERENCE_PROVIDER as InferenceProvider) || "nosana";
@@ -40,7 +48,7 @@ class LLMClient {
     this.baseUrl = this.resolveBaseUrl();
     this.http = axios.create({
       baseURL: this.baseUrl,
-      timeout: 120_000,
+      timeout: 10_000,
       headers: this.buildHeaders(),
       ...(this.provider === "nosana" ? { httpsAgent: nosanaAgent } : {}),
     });
@@ -95,6 +103,11 @@ class LLMClient {
       body.response_format = { type: "json_object" };
     }
 
+    // Circuit breaker: if endpoint is clearly down, skip immediately
+    if (this.circuitOpen) {
+      throw new Error("LLM inference failed: circuit open (endpoint repeatedly unavailable)");
+    }
+
     let lastError: string = "";
     const maxAttempts = req.no_retry ? 1 : MAX_RETRIES + 1;
 
@@ -112,6 +125,7 @@ class LLMClient {
 
         logger.debug(`[LLM] ${latency}ms | in=${data.usage?.prompt_tokens} out=${data.usage?.completion_tokens}`);
 
+        this.consecutiveFailures = 0; // reset on success
         return {
           content,
           model: data.model || this.modelName,
@@ -133,6 +147,11 @@ class LLMClient {
           continue;
         }
 
+        this.consecutiveFailures++;
+        if (this.consecutiveFailures >= this.CIRCUIT_THRESHOLD) {
+          this.circuitOpen = true;
+          logger.warn(`[LLM] Circuit opened after ${this.CIRCUIT_THRESHOLD} consecutive failures — skipping LLM for rest of run`);
+        }
         logger.error(`[LLM] Request failed (status=${status ?? "network"}): ${lastError}`);
         throw new Error(`LLM inference failed: ${lastError}`);
       }

@@ -26,6 +26,8 @@ import { runProposalAgent } from "./agents/proposalAgent";
 import { runCriticAgent } from "./agents/criticAgent";
 import { runActionAgent } from "./agents/actionAgent";
 import { runFeedbackAgent } from "./agents/feedbackAgent";
+import { llmClient } from "./llm/client";
+import { embeddingClient } from "./llm/embeddingClient";
 
 // Config
 import profileConfig from "../config/profile.json";
@@ -50,6 +52,8 @@ export async function runPipeline(options: {
     return { id: "skipped", started_at: new Date().toISOString(), sources_checked: [], opportunities_found: 0, opportunities_scored: 0, proposals_generated: 0, actions_taken: { APPLY: 0, SAVE: 0, IGNORE: 0 }, errors: ["skipped: already running"], status: "skipped" } as unknown as PipelineRun;
   }
   _pipelineRunning = true;
+  llmClient.resetCircuit();       // fresh LLM attempt each run
+  embeddingClient.resetCircuit(); // fresh embedding attempt each run
 
   const runId = uuidv4();
   const startedAt = new Date().toISOString();

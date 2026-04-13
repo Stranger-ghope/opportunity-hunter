@@ -12,6 +12,7 @@ import type {
   FeedbackInsights,
 } from "../types";
 import { llmClient } from "../llm/client";
+import { embeddingClient } from "../llm/embeddingClient";
 import {
   buildScoringSystemPrompt,
   buildScoringUserPrompt,
@@ -88,9 +89,7 @@ export async function runScoringAgent(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error(`[Scorer] Failed for "${opportunity.title}": ${msg}`);
-
-    // Graceful degradation — fallback heuristic score
-    return heuristicScore(opportunity, profile);
+    return semanticHeuristicScore(opportunity, profile);
   }
 }
 
@@ -120,7 +119,28 @@ export async function scoreBatch(
 // Heuristic fallback (when LLM fails)
 // ─────────────────────────────────────────────
 
-function heuristicScore(opp: Opportunity, profile: UserProfile): ScoringResult {
+async function semanticHeuristicScore(opp: Opportunity, profile: UserProfile): Promise<ScoringResult> {
+  // Try semantic relevance via Nosana embedding endpoint
+  let semanticRelevance: number | null = null;
+  try {
+    const profileText = [profile.title, profile.bio, ...profile.skills, ...profile.niches].join(" ");
+    const [profileEmb, oppEmb] = await Promise.all([
+      embeddingClient.getProfileEmbedding(profileText),
+      embeddingClient.embed((opp.title + " " + opp.raw_text).slice(0, 3000)),
+    ]);
+    if (profileEmb && oppEmb) {
+      const similarity = embeddingClient.cosineSimilarity(profileEmb, oppEmb);
+      // Map 0-1 cosine similarity → 4-20 relevance score
+      semanticRelevance = Math.round(4 + similarity * 16);
+      logger.debug(`[Scorer] Semantic relevance for "${opp.title}": ${similarity.toFixed(3)} → ${semanticRelevance}`);
+    }
+  } catch {
+    // silent — keyword fallback below
+  }
+  return heuristicScore(opp, profile, semanticRelevance);
+}
+
+function heuristicScore(opp: Opportunity, profile: UserProfile, semanticRelevance: number | null = null): ScoringResult {
   const rawLower = (opp.title + " " + opp.raw_text).toLowerCase();
   const titleLower = opp.title.toLowerCase();
 
@@ -153,7 +173,9 @@ function heuristicScore(opp: Opportunity, profile: UserProfile): ScoringResult {
     (w) => titleLower.includes(w) || rawLower.includes(w)
   ).length;
 
-  const relevance = wordMatches >= 4 ? 20
+  const relevance = semanticRelevance !== null
+    ? semanticRelevance
+    : wordMatches >= 4 ? 20
     : wordMatches >= 2 ? 16
     : wordMatches >= 1 ? 12
     : 4;
