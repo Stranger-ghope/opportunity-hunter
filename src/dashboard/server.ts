@@ -17,6 +17,9 @@ import type { Request, Response, NextFunction } from "express";
 import { db } from "../memory/database";
 import { runPipeline } from "../pipeline";
 import { ingestStructured } from "../agents/sources/manualAgent";
+import { runScoringAgent } from "../agents/scoringAgent";
+import { runActionAgent } from "../agents/actionAgent";
+import { runProposalAgent } from "../agents/proposalAgent";
 import { recordOutcome, runFeedbackAgent } from "../agents/feedbackAgent";
 import { logger } from "../utils/logger";
 import profileConfig from "../../config/profile.json";
@@ -189,6 +192,24 @@ app.post("/api/ingest", (req: Request, res: Response) => {
   const opp = ingestStructured({ title, url, budget, skills, raw_text, source });
   io.emit("opportunity:new", opp);
   res.json({ success: true, data: opp });
+
+  // Score and decide asynchronously — no_retry so it fails fast
+  setImmediate(async () => {
+    try {
+      await runScoringAgent(opp, profile);
+      const scored = db.getOpportunityById(opp.id)!;
+      const { decision } = await runActionAgent(scored, profile, null);
+      const decided = db.getOpportunityById(opp.id)!;
+      io.emit("opportunity:updated", decided);
+      io.emit("stats", db.getStats());
+      if (decision === "APPLY") {
+        await runProposalAgent(decided, profile);
+        io.emit("opportunity:updated", db.getOpportunityById(opp.id));
+      }
+    } catch (err) {
+      logger.warn(`[Ingest] Scoring failed for "${opp.title}": ${err}`);
+    }
+  });
 });
 
 // ── Stats & Insights ──────────────────────────
