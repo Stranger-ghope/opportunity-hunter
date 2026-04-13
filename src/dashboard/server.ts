@@ -96,7 +96,10 @@ app.post("/api/pipeline/run", async (_req: Request, res: Response) => {
     res.json({ success: true, message: "Pipeline started. Check /api/pipeline/runs for progress." });
     // Run async so response is immediate
     runPipeline()
-      .then((run) => io.emit("pipeline:complete", run))
+      .then((run) => {
+        io.emit("pipeline:complete", run);
+        io.emit("stats", db.getStats());
+      })
       .catch((err) => io.emit("pipeline:error", { message: err.message }));
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -108,7 +111,10 @@ app.post("/api/pipeline/run/dry", async (_req: Request, res: Response) => {
   try {
     res.json({ success: true, message: "Dry run started." });
     runPipeline({ dryRun: true })
-      .then((run) => io.emit("pipeline:complete", run))
+      .then((run) => {
+        io.emit("pipeline:complete", run);
+        io.emit("stats", db.getStats());
+      })
       .catch((err) => io.emit("pipeline:error", { message: err.message }));
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
