@@ -104,11 +104,18 @@ function extractBudget(text: string): string {
 
 function extractSkillHints(text: string, hints?: string[]): string[] {
   const KNOWN_SKILLS = [
+    // Finance & Accounting
+    "Bookkeeping", "Accounting", "QuickBooks", "Xero", "Sage", "Wave",
+    "GAAP", "IFRS", "Payroll", "Tax", "Audit", "CPA", "CFO",
+    "Accounts Payable", "Accounts Receivable", "Financial Reporting",
+    "Financial Analysis", "Budgeting", "Forecasting", "Excel",
+    // Engineering & Technical
+    "AutoCAD", "SolidWorks", "Civil", "Structural", "Mechanical",
+    // Tech
     "TypeScript", "JavaScript", "Python", "Rust", "Go", "Solidity",
     "React", "Next.js", "Vue", "Node.js", "Express", "GraphQL",
     "Docker", "Kubernetes", "AWS", "GCP", "PostgreSQL", "MongoDB",
-    "Web3", "Ethereum", "DeFi", "NFT", "AI", "ML", "LLM",
-    "ElizaOS", "LangChain", "OpenAI", "Nosana",
+    "Web3", "Ethereum", "DeFi", "AI", "ML", "LLM", "SQL",
   ];
 
   const combined = [...KNOWN_SKILLS, ...(hints || [])];

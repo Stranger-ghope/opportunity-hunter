@@ -188,6 +188,7 @@ export interface LLMRequest {
   temperature?: number;
   max_tokens?: number;
   json_mode?: boolean;
+  no_retry?: boolean;
 }
 
 export interface LLMResponse {

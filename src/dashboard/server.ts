@@ -9,6 +9,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import http from "http";
 import { Server as SocketIOServer } from "socket.io";
 import type { Request, Response, NextFunction } from "express";
@@ -78,6 +79,17 @@ app.get("/api/opportunities/status/:status", (req: Request, res: Response) => {
 });
 
 // ── Pipeline ─────────────────────────────────
+
+app.post("/api/reset", (_req: Request, res: Response) => {
+  try {
+    db.clearAll();
+    io.emit("stats", db.getStats());
+    res.json({ success: true, message: "All data cleared. Ready for a fresh pipeline run." });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ success: false, error: msg });
+  }
+});
 
 app.post("/api/pipeline/run", async (_req: Request, res: Response) => {
   try {
@@ -193,8 +205,30 @@ app.get("/api/feedback/insights", async (_req: Request, res: Response) => {
 
 // ── Profile ───────────────────────────────────
 
+const PROFILE_PATH = path.resolve(__dirname, "../../config/profile.json");
+
 app.get("/api/profile", (_req: Request, res: Response) => {
-  res.json({ success: true, data: profile });
+  try {
+    const data = JSON.parse(fs.readFileSync(PROFILE_PATH, "utf-8"));
+    res.json({ success: true, data });
+  } catch {
+    res.json({ success: true, data: profile });
+  }
+});
+
+app.put("/api/profile", (req: Request, res: Response) => {
+  try {
+    const updated = req.body as UserProfile;
+    if (!updated.name || !updated.skills) {
+      return res.status(400).json({ success: false, error: "name and skills are required" });
+    }
+    fs.writeFileSync(PROFILE_PATH, JSON.stringify(updated, null, 2), "utf-8");
+    logger.info("[Dashboard] Profile updated via UI");
+    res.json({ success: true, message: "Profile saved. Changes apply on next pipeline run." });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ success: false, error: msg });
+  }
 });
 
 // ─────────────────────────────────────────────
@@ -214,5 +248,9 @@ server.listen(PORT, () => {
   logger.info(`\n🖥️  Dashboard running at http://localhost:${PORT}`);
   logger.info(`📡 Socket.IO ready`);
 });
+
+setInterval(() => {
+  io.emit("stats", db.getStats());
+}, 15_000);
 
 export { app, server, io };

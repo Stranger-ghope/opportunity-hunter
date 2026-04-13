@@ -146,10 +146,18 @@ function extractBudget(text: string): string {
 
 function extractSkills(text: string): string[] {
   const SKILLS = [
+    // Finance & Accounting
+    "Bookkeeping", "Accounting", "QuickBooks", "Xero", "Sage", "Wave",
+    "GAAP", "IFRS", "Payroll", "Tax", "Audit", "CPA", "CFO",
+    "Accounts Payable", "Accounts Receivable", "Financial Reporting",
+    "Financial Analysis", "Budgeting", "Forecasting", "Excel",
+    "Financial Modeling", "NetSuite", "FreshBooks",
+    // Engineering
+    "AutoCAD", "SolidWorks", "Civil Engineering", "Structural",
+    // Tech
     "TypeScript", "JavaScript", "Python", "Rust", "Go", "Solidity",
     "React", "Next.js", "Vue", "Node.js", "GraphQL", "REST",
-    "Docker", "AWS", "Web3", "Ethereum", "DeFi", "AI", "ML",
-    "LLM", "ElizaOS", "LangChain", "Smart Contract",
+    "Docker", "AWS", "Web3", "Ethereum", "DeFi", "AI", "ML", "LLM", "SQL",
   ];
   const lower = text.toLowerCase();
   return SKILLS.filter((s) => lower.includes(s.toLowerCase()));

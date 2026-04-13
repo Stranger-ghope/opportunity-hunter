@@ -59,9 +59,49 @@ export async function runProposalAgent(
     return proposal;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    logger.error(`[Proposal Agent] Failed for "${opportunity.title}": ${msg}`);
-    throw err;
+    logger.warn(`[Proposal Agent] LLM unavailable, using template fallback for "${opportunity.title}": ${msg}`);
+
+    const fullText = buildTemplatePropsal(opportunity, profile);
+    const proposal: Proposal = {
+      id: uuidv4(),
+      opportunity_id: opportunity.id,
+      full_text: fullText,
+      short_version: fullText.slice(0, 300),
+      word_count: countWords(fullText),
+      generated_at: new Date().toISOString(),
+      version: 1,
+    };
+
+    db.saveProposal(proposal);
+    db.upsertOpportunity({ ...opportunity, status: "proposal_generated" });
+
+    logger.info(`[Proposal Agent] Template proposal saved for "${opportunity.title}"`);
+    return proposal;
   }
+}
+
+function buildTemplatePropsal(opportunity: Opportunity, profile: UserProfile): string {
+  const relevantSkills = profile.skills
+    .filter((s) => opportunity.raw_text.toLowerCase().includes(s.toLowerCase()))
+    .slice(0, 4);
+  const skillLine = relevantSkills.length
+    ? relevantSkills.join(", ")
+    : profile.skills.slice(0, 4).join(", ");
+
+  return `Hi,
+
+I'm ${profile.name}, a ${profile.title} with ${profile.experience_years} years of experience.
+
+I'm very interested in the "${opportunity.title}" opportunity. ${profile.bio}
+
+Relevant skills for this role: ${skillLine}.
+
+My rate is $${profile.hourly_rate_min}–$${profile.hourly_rate_max}/hr. I'm available to start promptly and can commit to the project requirements.
+
+I'd love to discuss how I can contribute. Please feel free to reach out.
+
+Best regards,
+${profile.name}`;
 }
 
 /**

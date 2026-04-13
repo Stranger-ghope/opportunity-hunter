@@ -28,9 +28,9 @@ import { runActionAgent } from "./agents/actionAgent";
 import { runFeedbackAgent } from "./agents/feedbackAgent";
 
 // Config
-import sourcesConfig from "../config/sources.json";
 import profileConfig from "../config/profile.json";
-import type { UserProfile, RSSFeedConfig, RedditSourceConfig } from "./types";
+import type { UserProfile } from "./types";
+import { generateDynamicSources } from "./agents/sources/dynamicSources";
 
 const profile = profileConfig as UserProfile;
 const APPLY_THRESHOLD = parseInt(process.env.SCORE_THRESHOLD || "60", 10);
@@ -39,10 +39,18 @@ const APPLY_THRESHOLD = parseInt(process.env.SCORE_THRESHOLD || "60", 10);
 // MAIN PIPELINE
 // ─────────────────────────────────────────────
 
+let _pipelineRunning = false;
+
 export async function runPipeline(options: {
   skipSources?: string[];
   dryRun?: boolean;
 } = {}): Promise<PipelineRun> {
+  if (_pipelineRunning) {
+    logger.warn("[Pipeline] Already running — skipping duplicate trigger");
+    return { id: "skipped", started_at: new Date().toISOString(), sources_checked: [], opportunities_found: 0, opportunities_scored: 0, proposals_generated: 0, actions_taken: { APPLY: 0, SAVE: 0, IGNORE: 0 }, errors: ["skipped: already running"], status: "skipped" } as unknown as PipelineRun;
+  }
+  _pipelineRunning = true;
+
   const runId = uuidv4();
   const startedAt = new Date().toISOString();
 
@@ -68,18 +76,16 @@ export async function runPipeline(options: {
     logger.info("📥 PHASE 1: Source ingestion");
     const rawOpportunities: Opportunity[] = [];
 
+    const { rss_feeds, reddit_sources } = generateDynamicSources(profile);
+
     if (!options.skipSources?.includes("rss")) {
-      const rssOpps = await runRSSAgent(
-        (sourcesConfig.rss_feeds as RSSFeedConfig[])
-      );
+      const rssOpps = await runRSSAgent(rss_feeds);
       rawOpportunities.push(...rssOpps);
       pipelineRun.sources_checked.push("rss");
     }
 
     if (!options.skipSources?.includes("reddit")) {
-      const redditOpps = await runRedditAgent(
-        (sourcesConfig.reddit_sources as RedditSourceConfig[])
-      );
+      const redditOpps = await runRedditAgent(reddit_sources);
       rawOpportunities.push(...redditOpps);
       pipelineRun.sources_checked.push("reddit");
     }
@@ -191,6 +197,8 @@ export async function runPipeline(options: {
     pipelineRun.completed_at = new Date().toISOString();
     db.savePipelineRun(pipelineRun);
     throw err;
+  } finally {
+    _pipelineRunning = false;
   }
 }
 

@@ -127,10 +127,19 @@ export async function initializeElizaAgent(): Promise<IAgentRuntime> {
     plugins: [opportunityHunterPlugin],
   };
 
+  // Create runtime with character + plugin registered.
+  // We skip agentRuntime.initialize() which requires @elizaos/plugin-sql
+  // (a heavy ElizaOS internal dependency). Our own SQLite layer (node-sqlite3-wasm)
+  // handles all persistence — the ElizaOS Plugin, Actions, Service and Character
+  // constructs are fully defined and wired through the plugin registry below.
   const agentRuntime = new AgentRuntime(config);
-  await agentRuntime.initialize();
-
   _runtime = agentRuntime;
+
+  // Start the pipeline scheduler service directly
+  await opportunityHunterPlugin.init?.({}, agentRuntime);
+  const svc = await opportunityHunterPlugin.services?.[0]?.start(agentRuntime);
+  if (svc) logger.info("[ElizaOS] PipelineSchedulerService started ✅");
+
   logger.info(`[ElizaOS] Agent "${opportunityHunterCharacter.name}" ready ✅`);
   logger.info(`[ElizaOS] Plugin: opportunity-hunter | Actions: ${opportunityHunterPlugin.actions?.length ?? 0}`);
   logger.info(`[ElizaOS] Model: ${opportunityHunterCharacter.settings?.model}`);

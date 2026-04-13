@@ -1,36 +1,48 @@
 {
-  "name": "Alex Rivera",
-  "title": "Full-Stack AI Engineer & Web3 Developer",
+  "name": "Jordan Mitchell",
+  "title": "Freelance Accountant & Financial Analyst",
+  "bio": "Certified accountant with 8 years of experience helping small businesses and startups manage their finances, reduce tax liability, and maintain clean books. I work remotely with clients worldwide, delivering accurate financial reports, payroll management, and strategic budgeting advice. Fast turnaround, meticulous attention to detail, and clear communication.",
+  "hourly_rate_min": 45,
+  "hourly_rate_max": 95,
   "skills": [
-    "TypeScript", "Python", "React", "Node.js", "Solidity",
-    "ElizaOS", "LangChain", "OpenAI API", "Docker", "PostgreSQL",
-    "REST APIs", "GraphQL", "AWS", "Nosana", "Ethereum", "Rust"
+    "Bookkeeping",
+    "Tax Preparation",
+    "Financial Reporting",
+    "QuickBooks",
+    "Xero",
+    "Excel",
+    "GAAP",
+    "Payroll",
+    "Accounts Payable",
+    "Accounts Receivable",
+    "Audit",
+    "Financial Analysis",
+    "Budgeting",
+    "Forecasting",
+    "Wave Accounting",
+    "Sage"
   ],
-  "experience_years": 6,
   "niches": [
-    "AI agent development",
-    "Web3 / DeFi integrations",
-    "Full-stack SaaS",
-    "Automation & bots",
-    "Smart contract development"
+    "Small business accounting",
+    "Remote bookkeeping",
+    "Tax preparation and filing",
+    "Financial consulting",
+    "Startup finance and CFO services"
   ],
-  "hourly_rate_min": 75,
-  "hourly_rate_max": 150,
-  "preferred_project_types": [
-    "freelance",
-    "contract",
-    "bounty",
-    "part-time"
-  ],
-  "portfolio_url": "https://alexrivera.dev",
-  "bio": "I build autonomous AI systems, Web3 applications, and high-performance APIs. I specialize in ElizaOS agent frameworks, decentralized compute pipelines, and LLM-powered product features. My work ships fast, is well-documented, and scales.",
-  "tone": "professional",
   "avoid_keywords": [
     "unpaid",
     "intern",
     "entry level",
     "no pay",
     "revenue share only",
-    "equity only"
-  ]
+    "equity only",
+    "volunteer"
+  ],
+  "portfolio_url": "https://jordanmitchell.cpa",
+  "experience_years": 1,
+  "preferred_project_types": [
+    "freelance",
+    "contract"
+  ],
+  "tone": "professional"
 }

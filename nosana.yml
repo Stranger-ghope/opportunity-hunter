@@ -16,12 +16,13 @@ ops:
     type: container/run
     args:
       image: your-dockerhub-username/opportunity-hunter:latest
-      gpu: true                   # Enable GPU for accelerated inference
+      gpu: false                  # No GPU needed — LLM inference goes to external Nosana inference API
       expose: 3000                # Expose dashboard port
       env:
         - INFERENCE_PROVIDER=nosana
-        - MODEL_NAME=Qwen/Qwen3.5-27B-Instruct-AWQ
-        - NOSANA_API_URL=https://inference.nosana.io/v1
+        - MODEL_NAME=Qwen3.5-27B-AWQ-4bit
+        - NOSANA_API_URL=https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1
+        - OPENAI_API_KEY=nosana
         - PIPELINE_INTERVAL_MINUTES=60
         - SCORE_THRESHOLD=60
         - DASHBOARD_PORT=3000

@@ -44,6 +44,10 @@
     <div id="connectionStatus" class="flex items-center gap-2 text-xs text-slate-500">
       <div class="w-2 h-2 rounded-full bg-slate-600"></div> Connecting...
     </div>
+    <button onclick="resetData()" id="resetBtn"
+      class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 border border-[#2a2d3e] transition-all hover:border-red-500 hover:text-red-400">
+      🗑️ Reset
+    </button>
     <button onclick="runPipeline()" id="runBtn"
       class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90"
       style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
@@ -63,7 +67,7 @@
     <p class="text-2xl font-bold text-indigo-400" id="statScored">—</p>
   </div>
   <div class="card p-4">
-    <p class="text-xs text-slate-500 mb-1">Applied</p>
+    <p class="text-xs text-slate-500 mb-1">AI: Apply</p>
     <p class="text-2xl font-bold text-green-400" id="statApplied">—</p>
   </div>
   <div class="card p-4">
@@ -78,6 +82,7 @@
   <button class="tab-btn" onclick="showTab('pipeline', this)">Pipeline Runs</button>
   <button class="tab-btn" onclick="showTab('ingest', this)">Manual Ingest</button>
   <button class="tab-btn" onclick="showTab('insights', this)">Insights</button>
+  <button class="tab-btn" onclick="showTab('profile', this)">⚙ Profile</button>
 </div>
 
 <!-- Main Content -->
@@ -89,10 +94,9 @@
       <div class="flex gap-2">
         <select id="filterStatus" onchange="filterOpportunities()" class="text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-slate-300" style="background: #1a1d27;">
           <option value="">All Status</option>
-          <option value="new">New</option>
-          <option value="scored">Scored</option>
+          <option value="ai_apply">AI: Apply (Recommended)</option>
           <option value="proposal_generated">Proposal Ready</option>
-          <option value="applied">Applied</option>
+          <option value="applied">Manually Applied</option>
           <option value="saved">Saved</option>
           <option value="ignored">Ignored</option>
         </select>
@@ -143,6 +147,61 @@
       <div class="text-center py-8 text-slate-500">
         <div class="spinner mx-auto mb-3"></div>
         Loading insights...
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Tab -->
+  <div id="tab-profile" class="hidden max-w-2xl">
+    <div class="card p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-white font-semibold text-lg">Agent Profile</h3>
+        <span class="text-xs text-slate-500">Changes apply on next pipeline run</span>
+      </div>
+      <div class="space-y-4" id="profileForm">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs text-slate-400 mb-1 block">Your Name *</label>
+            <input id="pName" class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white" style="background:#111827;" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 mb-1 block">Professional Title *</label>
+            <input id="pTitle" class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white" style="background:#111827;" />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Bio</label>
+          <textarea id="pBio" rows="3" class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white resize-y" style="background:#111827;"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs text-slate-400 mb-1 block">Min Hourly Rate ($)</label>
+            <input id="pRateMin" type="number" class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white" style="background:#111827;" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 mb-1 block">Max Hourly Rate ($)</label>
+            <input id="pRateMax" type="number" class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white" style="background:#111827;" />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Skills (comma-separated) *</label>
+          <input id="pSkills" placeholder="TypeScript, Python, React, Node.js" class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white" style="background:#111827;" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Niches / Specializations (comma-separated)</label>
+          <input id="pNiches" placeholder="AI development, Web3, SaaS" class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white" style="background:#111827;" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Keywords to Avoid (comma-separated)</label>
+          <input id="pAvoid" placeholder="unpaid, intern, equity only" class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white" style="background:#111827;" />
+        </div>
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">Portfolio URL</label>
+          <input id="pPortfolio" placeholder="https://yoursite.com" class="w-full text-sm px-3 py-2 rounded-lg border border-[#2a2d3e] text-white" style="background:#111827;" />
+        </div>
+        <button onclick="saveProfile()" class="w-full py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+          Save Profile
+        </button>
       </div>
     </div>
   </div>
@@ -203,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadOpportunities();
   loadStats();
   loadPipelineRuns();
+  setInterval(() => { loadOpportunities(); loadStats(); }, 30000);
 });
 
 // ─────────────────────────────────────────────
@@ -262,12 +322,13 @@ async function ingestManual() {
   if (!title || !raw_text) { showToast('Title and description are required', true); return; }
   const data = await api('POST', '/api/ingest', { title, raw_text, url: url || undefined });
   if (data.success) {
-    showToast(`✅ Ingested: "${title}"`);
+    showToast(`✅ Ingested — scoring now...`);
     document.getElementById('ingestTitle').value = '';
     document.getElementById('ingestText').value = '';
     document.getElementById('ingestUrl').value = '';
-    loadOpportunities();
     showTab('opportunities', document.querySelector('.tab-btn'));
+    setRunning(true);
+    await api('POST', '/api/pipeline/run', {});
   } else showToast(`Error: ${data.error}`, true);
 }
 
@@ -287,7 +348,11 @@ function filterOpportunities() {
   const search = document.getElementById('searchBox').value.toLowerCase();
 
   let filtered = allOpportunities;
-  if (statusFilter) filtered = filtered.filter(o => o.status === statusFilter);
+  if (statusFilter === 'ai_apply') {
+    filtered = filtered.filter(o => o.action === 'APPLY' || o.status === 'applied' || o.status === 'proposal_approved');
+  } else if (statusFilter) {
+    filtered = filtered.filter(o => o.status === statusFilter);
+  }
   if (search) filtered = filtered.filter(o =>
     o.title.toLowerCase().includes(search) ||
     o.source.toLowerCase().includes(search) ||
@@ -458,6 +523,7 @@ function showTab(tab, btn) {
   if (btn) btn.classList.add('active');
   if (tab === 'insights') loadInsights();
   if (tab === 'pipeline') loadPipelineRuns();
+  if (tab === 'profile') loadProfile();
 }
 
 function updateStats(stats) {
@@ -521,6 +587,68 @@ function timeAgo(ts) {
 function escHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────
+// Profile
+// ─────────────────────────────────────────────
+async function resetData() {
+  if (!confirm('Reset ALL data? This clears all opportunities, proposals, and pipeline history. This cannot be undone.')) return;
+  try {
+    const res = await fetch('/api/reset', { method: 'POST' });
+    const json = await res.json();
+    if (json.success) {
+      allOpportunities = [];
+      renderOpportunities();
+      showToast('🗑️ All data cleared — ready for a fresh run');
+    } else {
+      showToast('Error: ' + json.error, true);
+    }
+  } catch(e) { showToast('Reset failed', true); }
+}
+
+async function loadProfile() {
+  try {
+    const res = await fetch('/api/profile');
+    const json = await res.json();
+    const p = json.data;
+    document.getElementById('pName').value = p.name || '';
+    document.getElementById('pTitle').value = p.title || '';
+    document.getElementById('pBio').value = p.bio || '';
+    document.getElementById('pRateMin').value = p.hourly_rate_min || '';
+    document.getElementById('pRateMax').value = p.hourly_rate_max || '';
+    document.getElementById('pSkills').value = (p.skills || []).join(', ');
+    document.getElementById('pNiches').value = (p.niches || []).join(', ');
+    document.getElementById('pAvoid').value = (p.avoid_keywords || []).join(', ');
+    document.getElementById('pPortfolio').value = p.portfolio_url || '';
+  } catch(e) { showToast('Failed to load profile', true); }
+}
+
+async function saveProfile() {
+  const split = (s) => s.split(',').map(x => x.trim()).filter(Boolean);
+  const payload = {
+    name: document.getElementById('pName').value.trim(),
+    title: document.getElementById('pTitle').value.trim(),
+    bio: document.getElementById('pBio').value.trim(),
+    hourly_rate_min: parseInt(document.getElementById('pRateMin').value) || 0,
+    hourly_rate_max: parseInt(document.getElementById('pRateMax').value) || 0,
+    skills: split(document.getElementById('pSkills').value),
+    niches: split(document.getElementById('pNiches').value),
+    avoid_keywords: split(document.getElementById('pAvoid').value),
+    portfolio_url: document.getElementById('pPortfolio').value.trim(),
+    experience_years: 1,
+    preferred_project_types: ['freelance','contract'],
+    tone: 'professional'
+  };
+  if (!payload.name || !payload.skills.length) {
+    return showToast('Name and skills are required', true);
+  }
+  try {
+    const res = await fetch('/api/profile', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const json = await res.json();
+    if (json.success) showToast('✅ Profile saved — takes effect on next pipeline run');
+    else showToast('Error: ' + json.error, true);
+  } catch(e) { showToast('Failed to save profile', true); }
 }
 </script>
 </body>

@@ -14,7 +14,7 @@ import { runPipeline } from "./pipeline";
 import { initializeElizaAgent } from "./eliza/agent";
 
 // Dashboard server
-import "./dashboard/server";
+import { io } from "./dashboard/server";
 
 // ─────────────────────────────────────────────
 // Startup
@@ -48,17 +48,21 @@ initializeElizaAgent()
     logger.warn(`⚠️  ElizaOS runtime unavailable (${msg}) — using standalone scheduler`);
 
     // Standalone fallback: run once + cron
-    runPipeline().catch((e: unknown) =>
-      logger.error(`❌ Initial pipeline failed: ${e instanceof Error ? e.message : e}`)
-    );
+    runPipeline()
+      .then((run) => io.emit("pipeline:complete", run))
+      .catch((e: unknown) =>
+        logger.error(`❌ Initial pipeline failed: ${e instanceof Error ? e.message : e}`)
+      );
 
     cron.schedule(`*/${INTERVAL_MINUTES} * * * *`, async () => {
       logger.info(`\n⏰ Scheduled pipeline run (every ${INTERVAL_MINUTES} min)`);
       try {
-        await runPipeline();
+        const run = await runPipeline();
+        io.emit("pipeline:complete", run);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         logger.error(`❌ Scheduled pipeline failed: ${msg}`);
+        io.emit("pipeline:error", { message: msg });
       }
     });
 

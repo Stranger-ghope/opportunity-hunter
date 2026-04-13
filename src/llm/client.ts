@@ -4,8 +4,12 @@
  */
 
 import axios, { AxiosInstance } from "axios";
+import https from "https";
 import { LLMRequest, LLMResponse } from "../types";
 import { logger } from "../utils/logger";
+
+// Keep-alive agent for connection reuse
+const nosanaAgent = new https.Agent({ keepAlive: true });
 
 type InferenceProvider = "nosana" | "ollama" | "openai";
 
@@ -38,6 +42,7 @@ class LLMClient {
       baseURL: this.baseUrl,
       timeout: 120_000,
       headers: this.buildHeaders(),
+      ...(this.provider === "nosana" ? { httpsAgent: nosanaAgent } : {}),
     });
 
     logger.info(`[LLM] Provider=${this.provider} Model=${this.modelName} Base=${this.baseUrl}`);
@@ -46,7 +51,7 @@ class LLMClient {
   private resolveBaseUrl(): string {
     switch (this.provider) {
       case "nosana":
-        return process.env.NOSANA_API_URL || "https://inference.nosana.io/v1";
+        return process.env.NOSANA_API_URL || process.env.OPENAI_API_URL || "https://inference.nosana.io/v1";
       case "ollama":
         return (process.env.OLLAMA_BASE_URL || "http://localhost:11434") + "/v1";
       case "openai":
@@ -60,11 +65,9 @@ class LLMClient {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (this.provider === "nosana" && process.env.NOSANA_API_KEY) {
-      headers["Authorization"] = `Bearer ${process.env.NOSANA_API_KEY}`;
-    }
-    if (this.provider === "openai" && process.env.OPENAI_API_KEY) {
-      headers["Authorization"] = `Bearer ${process.env.OPENAI_API_KEY}`;
+    const apiKey = process.env.NOSANA_API_KEY || process.env.OPENAI_API_KEY;
+    if (apiKey) {
+      headers["Authorization"] = `Bearer ${apiKey}`;
     }
     return headers;
   }
@@ -74,6 +77,8 @@ class LLMClient {
    */
   async complete(req: LLMRequest): Promise<LLMResponse> {
     const startMs = Date.now();
+    const MAX_RETRIES = 3;
+    const RETRY_DELAYS = [3000, 8000, 15000]; // ms
 
     const body: OpenAICompatRequest = {
       model: this.modelName,
@@ -90,31 +95,50 @@ class LLMClient {
       body.response_format = { type: "json_object" };
     }
 
-    try {
-      const res = await this.http.post<{
-        choices: Array<{ message: { content: string } }>;
-        model: string;
-        usage: { prompt_tokens: number; completion_tokens: number };
-      }>("/chat/completions", body);
+    let lastError: string = "";
+    const maxAttempts = req.no_retry ? 1 : MAX_RETRIES + 1;
 
-      const data = res.data;
-      const content = data.choices?.[0]?.message?.content ?? "";
-      const latency = Date.now() - startMs;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const res = await this.http.post<{
+          choices: Array<{ message: { content: string } }>;
+          model: string;
+          usage: { prompt_tokens: number; completion_tokens: number };
+        }>("/chat/completions", body);
 
-      logger.debug(`[LLM] ${latency}ms | in=${data.usage?.prompt_tokens} out=${data.usage?.completion_tokens}`);
+        const data = res.data;
+        const content = data.choices?.[0]?.message?.content ?? "";
+        const latency = Date.now() - startMs;
 
-      return {
-        content,
-        model: data.model || this.modelName,
-        prompt_tokens: data.usage?.prompt_tokens ?? 0,
-        completion_tokens: data.usage?.completion_tokens ?? 0,
-        latency_ms: latency,
-      };
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      logger.error(`[LLM] Request failed: ${message}`);
-      throw new Error(`LLM inference failed: ${message}`);
+        logger.debug(`[LLM] ${latency}ms | in=${data.usage?.prompt_tokens} out=${data.usage?.completion_tokens}`);
+
+        return {
+          content,
+          model: data.model || this.modelName,
+          prompt_tokens: data.usage?.prompt_tokens ?? 0,
+          completion_tokens: data.usage?.completion_tokens ?? 0,
+          latency_ms: latency,
+        };
+      } catch (err: unknown) {
+        const axiosErr = err as { response?: { status: number }; message?: string };
+        const status = axiosErr?.response?.status;
+        lastError = axiosErr?.message ?? String(err);
+
+        const isTransient = status === 503 || status === 502 || status === 429;
+
+        if (isTransient && attempt < MAX_RETRIES) {
+          const delay = RETRY_DELAYS[attempt];
+          logger.warn(`[LLM] ${status} transient error (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${delay / 1000}s...`);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
+        }
+
+        logger.error(`[LLM] Request failed (status=${status ?? "network"}): ${lastError}`);
+        throw new Error(`LLM inference failed: ${lastError}`);
+      }
     }
+
+    throw new Error(`LLM inference failed after ${MAX_RETRIES} retries: ${lastError}`);
   }
 
   /**

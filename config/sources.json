@@ -1,85 +1,80 @@
 {
   "rss_feeds": [
     {
-      "name": "HackerNews Hiring",
-      "url": "https://hnrss.org/jobs",
-      "category": "tech",
+      "name": "We Work Remotely - Finance",
+      "url": "https://weworkremotely.com/categories/remote-finance-legal-jobs.rss",
+      "category": "finance",
       "enabled": true,
-      "skill_hints": ["TypeScript", "Python", "React", "Node.js"]
+      "skill_hints": ["Bookkeeping", "Accounting", "QuickBooks", "Tax", "Payroll"]
     },
     {
-      "name": "RemoteOK RSS",
-      "url": "https://remoteok.com/remote-jobs.rss",
-      "category": "remote",
+      "name": "RemoteOK - Accounting",
+      "url": "https://remoteok.com/remote-accounting-jobs.rss",
+      "category": "finance",
       "enabled": true,
-      "skill_hints": ["AI", "Web3", "Full-stack"]
+      "skill_hints": ["Accounting", "Bookkeeping", "QuickBooks", "Xero"]
     },
     {
-      "name": "We Work Remotely - Programming",
-      "url": "https://weworkremotely.com/categories/remote-programming-jobs.rss",
-      "category": "programming",
-      "enabled": true
+      "name": "RemoteOK - Finance",
+      "url": "https://remoteok.com/remote-finance-jobs.rss",
+      "category": "finance",
+      "enabled": true,
+      "skill_hints": ["Finance", "Financial Analysis", "Budgeting", "Forecasting"]
     },
     {
-      "name": "We Work Remotely - Full-Stack",
+      "name": "We Work Remotely - All Remote",
       "url": "https://weworkremotely.com/remote-jobs.rss",
       "category": "remote",
       "enabled": true
     },
     {
+      "name": "HackerNews Hiring",
+      "url": "https://hnrss.org/jobs",
+      "category": "tech",
+      "enabled": false,
+      "skill_hints": ["TypeScript", "Python", "React", "Node.js"]
+    },
+    {
       "name": "Crypto Jobs List RSS",
       "url": "https://cryptojobslist.com/rss.xml",
       "category": "web3",
-      "enabled": true,
-      "skill_hints": ["Solidity", "Web3", "Ethereum", "DeFi"]
-    },
-    {
-      "name": "Web3 Career RSS",
-      "url": "https://web3.career/feed",
-      "category": "web3",
       "enabled": false,
-      "skill_hints": ["Solidity", "Rust", "Web3"]
-    },
-    {
-      "name": "GitHub Jobs RSS (archived mirror)",
-      "url": "https://jobs.github.com/positions.json",
-      "category": "tech",
-      "enabled": false
+      "skill_hints": ["Solidity", "Web3", "Ethereum", "DeFi"]
     }
   ],
   "reddit_sources": [
     {
       "subreddit": "forhire",
       "flairs": ["Hiring"],
-      "keyword_filter": ["AI", "TypeScript", "React", "Node", "Python", "Web3", "Solidity", "developer"],
+      "keyword_filter": ["accountant", "bookkeeper", "QuickBooks", "Xero", "tax", "payroll", "CPA", "finance", "accounting", "bookkeeping"],
       "limit": 25,
       "enabled": true
     },
     {
       "subreddit": "slavelabour",
       "flairs": [],
-      "keyword_filter": ["developer", "programmer", "AI", "automation"],
+      "keyword_filter": ["accountant", "bookkeeper", "tax", "QuickBooks", "Xero", "payroll", "finance", "accounting"],
       "limit": 20,
       "enabled": true
     },
     {
       "subreddit": "freelance",
       "flairs": [],
-      "keyword_filter": ["developer", "engineer", "AI", "web", "contract"],
+      "keyword_filter": ["accountant", "bookkeeper", "CPA", "tax", "finance", "QuickBooks", "accounting", "payroll"],
       "limit": 20,
       "enabled": true
     },
     {
-      "subreddit": "ethereum",
-      "flairs": ["Jobs"],
-      "keyword_filter": ["developer", "smart contract", "Solidity", "DeFi"],
-      "limit": 15,
+      "subreddit": "bookkeeping",
+      "flairs": [],
+      "keyword_filter": ["hiring", "job", "need", "looking for", "freelance", "remote"],
+      "limit": 20,
       "enabled": true
     },
     {
-      "subreddit": "web3",
+      "subreddit": "smallbusiness",
       "flairs": [],
-      "keyword_filter": ["hiring", "job", "bounty", "developer"],
+      "keyword_filter": ["accountant", "bookkeeper", "CPA", "tax prep", "QuickBooks", "payroll", "accounting help"],
       "limit": 15,
       "enabled": true
     }

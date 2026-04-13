@@ -48,6 +48,7 @@ export async function runScoringAgent(
       user_prompt: userPrompt,
       temperature: 0.2, // Low temp for consistent scoring
       max_tokens: 512,
+      no_retry: true, // Bulk call — fail fast, heuristic fallback is fine
     });
 
     // Clamp and validate all scores
@@ -121,30 +122,41 @@ export async function scoreBatch(
 
 function heuristicScore(opp: Opportunity, profile: UserProfile): ScoringResult {
   const rawLower = (opp.title + " " + opp.raw_text).toLowerCase();
+  const titleLower = opp.title.toLowerCase();
 
-  const skill_match = Math.min(
-    25,
-    profile.skills.filter((s) => rawLower.includes(s.toLowerCase())).length * 4
-  );
+  // Skill match: each matching profile skill = 5 pts, capped at 25
+  const skillMatches = profile.skills.filter((s) => rawLower.includes(s.toLowerCase())).length;
+  const skill_match = Math.min(25, skillMatches * 5);
 
-  const budget_quality = opp.budget
-    ? rawLower.includes("$") ? 12 : 8
-    : 3;
+  // Budget quality: RSS feeds rarely include budget — don't penalize absence
+  const budget_quality = rawLower.includes("$") ? 15
+    : opp.budget ? 10
+    : 8; // neutral baseline for remote jobs
 
-  const urgency_signals =
-    rawLower.includes("urgent") || rawLower.includes("asap") ? 12 : 5;
+  // Urgency signals
+  const urgency_signals = rawLower.includes("urgent") || rawLower.includes("asap") || rawLower.includes("immediately") ? 12 : 5;
 
-  const competition_likelihood = opp.skills.some((s) =>
-    ["solidity", "eliza", "nosana", "rust"].includes(s.toLowerCase())
-  )
-    ? 18
-    : 10;
+  // Competition likelihood: fewer required skills = less competition = higher score
+  const reqSkills = opp.skills?.length ?? 0;
+  const competition_likelihood = reqSkills <= 2 ? 15 : reqSkills <= 5 ? 12 : 8;
 
-  const relevance = profile.niches.some((n) =>
-    rawLower.includes(n.toLowerCase())
-  )
-    ? 16
-    : 8;
+  // Relevance: match individual meaningful words from profile title and niches
+  const profileWords = [
+    ...profile.title.split(/\s+/),
+    ...profile.niches.flatMap((n) => n.split(/\s+/)),
+  ]
+    .map((w) => w.toLowerCase().replace(/[^a-z]/g, ""))
+    .filter((w) => w.length > 3);
+
+  const uniqueProfileWords = [...new Set(profileWords)];
+  const wordMatches = uniqueProfileWords.filter(
+    (w) => titleLower.includes(w) || rawLower.includes(w)
+  ).length;
+
+  const relevance = wordMatches >= 4 ? 20
+    : wordMatches >= 2 ? 16
+    : wordMatches >= 1 ? 12
+    : 4;
 
   const breakdown = {
     skill_match,

@@ -22,18 +22,25 @@ export function runNormalizationAgent(
   let filtered = 0;
   let duplicates = 0;
 
-  for (const raw of rawOpportunities) {
+  const total = rawOpportunities.length;
+  for (let idx = 0; idx < total; idx++) {
+    const raw = rawOpportunities[idx];
+    if (idx > 0 && idx % 25 === 0) {
+      logger.info(`[Normalizer] Progress: ${idx}/${total} processed...`);
+    }
     // 1. Skip if URL already exists in DB
     if (raw.url && raw.url.startsWith("http") && db.opportunityExistsByUrl(raw.url)) {
       duplicates++;
       continue;
     }
 
-    // 2. Apply avoid-keyword filter
-    const rawLower = (raw.title + " " + raw.raw_text).toLowerCase();
-    const hitAvoidWord = profile.avoid_keywords.some((kw) =>
-      rawLower.includes(kw.toLowerCase())
-    );
+    // 2. Apply avoid-keyword filter (word-boundary match to prevent "intern" matching "internal")
+    const titleLower = raw.title.toLowerCase();
+    const hitAvoidWord = profile.avoid_keywords.some((kw) => {
+      const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pattern = new RegExp(`\\b${escaped}\\b`, "i");
+      return pattern.test(titleLower);
+    });
     if (hitAvoidWord) {
       logger.debug(`[Normalizer] Filtered (avoid keyword): ${raw.title}`);
       filtered++;
@@ -121,6 +128,9 @@ function buildTags(opp: Opportunity): string[] {
   if (lower.includes("urgent") || lower.includes("asap") || lower.includes("immediately")) {
     tags.add("urgent");
   }
+  if (lower.includes("long-term") || lower.includes("ongoing") || lower.includes("retainer")) {
+    tags.add("long_term");
+  }
   if (lower.includes("web3") || lower.includes("blockchain") || lower.includes("defi")) {
     tags.add("web3");
   }
@@ -130,8 +140,22 @@ function buildTags(opp: Opportunity): string[] {
   if (lower.includes("bounty")) {
     tags.add("bounty");
   }
-  if (lower.includes("long-term") || lower.includes("ongoing") || lower.includes("retainer")) {
-    tags.add("long_term");
+  if (lower.includes("bookkeep") || lower.includes("quickbooks") || lower.includes("xero") ||
+      lower.includes("accounting") || lower.includes("accounts payable") || lower.includes("accounts receivable")) {
+    tags.add("bookkeeping");
+  }
+  if (lower.includes("tax") || lower.includes("cpa") || lower.includes("irs") || lower.includes("filing")) {
+    tags.add("tax");
+  }
+  if (lower.includes("payroll") || lower.includes("salary") || lower.includes("compensation")) {
+    tags.add("payroll");
+  }
+  if (lower.includes("cfo") || lower.includes("controller") || lower.includes("financial analysis") ||
+      lower.includes("financial planning") || lower.includes("budgeting") || lower.includes("forecasting")) {
+    tags.add("finance");
+  }
+  if (lower.includes("audit") || lower.includes("compliance") || lower.includes("gaap") || lower.includes("ifrs")) {
+    tags.add("audit");
   }
 
   return [...tags];

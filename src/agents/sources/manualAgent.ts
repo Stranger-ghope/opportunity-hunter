@@ -145,11 +145,17 @@ function extractBudget(text: string): string {
 
 function extractSkills(text: string): string[] {
   const SKILLS = [
-    "TypeScript", "JavaScript", "Python", "Rust", "Go", "Solidity",
-    "React", "Next.js", "Vue", "Node.js", "GraphQL", "REST",
-    "Docker", "Kubernetes", "AWS", "GCP", "PostgreSQL", "MongoDB",
-    "Web3", "Ethereum", "DeFi", "NFT", "AI", "ML", "LLM",
-    "ElizaOS", "LangChain", "OpenAI", "Nosana",
+    // Accounting & Finance
+    "Bookkeeping", "Accounting", "Tax Preparation", "Tax Filing", "Payroll",
+    "QuickBooks", "Xero", "Sage", "Wave", "FreshBooks", "NetSuite",
+    "GAAP", "IFRS", "Audit", "CPA", "Financial Reporting",
+    "Accounts Payable", "Accounts Receivable", "Bank Reconciliation",
+    "Financial Analysis", "Budgeting", "Forecasting", "Cash Flow",
+    "Balance Sheet", "Income Statement", "P&L", "CFO", "Controller",
+    "Excel", "Google Sheets", "Financial Modeling", "Variance Analysis",
+    // Tech (keep for general matching)
+    "TypeScript", "JavaScript", "Python", "React", "Node.js",
+    "SQL", "PostgreSQL", "Excel VBA", "Power BI", "Tableau",
   ];
   const lower = text.toLowerCase();
   return SKILLS.filter((s) => lower.includes(s.toLowerCase()));

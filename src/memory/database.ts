@@ -145,11 +145,7 @@ class OpportunityDatabase {
         id, title, source, url, budget, skills, timestamp, raw_text,
         normalized_at, score, score_breakdown, score_reasoning,
         action, action_reasoning, status, tags, company, location, remote, deadline
-      ) VALUES (
-        @id, @title, @source, @url, @budget, @skills, @timestamp, @raw_text,
-        @normalized_at, @score, @score_breakdown, @score_reasoning,
-        @action, @action_reasoning, @status, @tags, @company, @location, @remote, @deadline
-      )
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         score = excluded.score,
         score_breakdown = excluded.score_breakdown,
@@ -159,13 +155,15 @@ class OpportunityDatabase {
         status = excluded.status,
         normalized_at = excluded.normalized_at,
         tags = excluded.tags
-    `, {
-      ...opp,
-      skills: JSON.stringify(opp.skills || []),
-      score_breakdown: opp.score_breakdown ? JSON.stringify(opp.score_breakdown) : null,
-      tags: JSON.stringify(opp.tags || []),
-      remote: opp.remote ? 1 : 0,
-    } as Record<string, unknown>);
+    `, [
+      opp.id, opp.title, opp.source, opp.url ?? null, opp.budget ?? null,
+      JSON.stringify(opp.skills || []), opp.timestamp ?? null, opp.raw_text ?? null,
+      opp.normalized_at ?? null, opp.score ?? null,
+      opp.score_breakdown ? JSON.stringify(opp.score_breakdown) : null,
+      opp.score_reasoning ?? null, opp.action ?? null, opp.action_reasoning ?? null,
+      opp.status, JSON.stringify(opp.tags || []), opp.company ?? null,
+      opp.location ?? null, opp.remote ? 1 : 0, opp.deadline ?? null,
+    ]);
   }
 
   getOpportunityById(id: string): Opportunity | null {
@@ -209,9 +207,12 @@ class OpportunityDatabase {
     this.stmtRun(`
       INSERT OR REPLACE INTO proposals
         (id, opportunity_id, full_text, short_version, word_count, generated_at, version, critic_feedback, improved_version)
-      VALUES
-        (@id, @opportunity_id, @full_text, @short_version, @word_count, @generated_at, @version, @critic_feedback, @improved_version)
-    `, proposal as unknown as Record<string, unknown>);
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      proposal.id, proposal.opportunity_id, proposal.full_text, proposal.short_version,
+      proposal.word_count ?? null, proposal.generated_at ?? null, proposal.version ?? 1,
+      proposal.critic_feedback ?? null, proposal.improved_version ?? null,
+    ]);
   }
 
   getProposalByOpportunityId(opportunityId: string): Proposal | null {
@@ -230,9 +231,11 @@ class OpportunityDatabase {
     this.stmtRun(`
       INSERT OR REPLACE INTO outcomes
         (id, opportunity_id, proposal_id, outcome, feedback_notes, recorded_at, response_time_hours)
-      VALUES
-        (@id, @opportunity_id, @proposal_id, @outcome, @feedback_notes, @recorded_at, @response_time_hours)
-    `, outcome as unknown as Record<string, unknown>);
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [
+      outcome.id, outcome.opportunity_id, outcome.proposal_id ?? null, outcome.outcome,
+      outcome.feedback_notes ?? null, outcome.recorded_at ?? null, outcome.response_time_hours ?? null,
+    ]);
   }
 
   getOutcomes(): OutcomeRecord[] {
@@ -247,14 +250,13 @@ class OpportunityDatabase {
     this.stmtRun(`
       INSERT OR REPLACE INTO pipeline_runs
         (id, started_at, completed_at, sources_checked, opportunities_found, opportunities_scored, proposals_generated, actions_taken, errors, status)
-      VALUES
-        (@id, @started_at, @completed_at, @sources_checked, @opportunities_found, @opportunities_scored, @proposals_generated, @actions_taken, @errors, @status)
-    `, {
-      ...run,
-      sources_checked: JSON.stringify(run.sources_checked),
-      actions_taken: JSON.stringify(run.actions_taken),
-      errors: JSON.stringify(run.errors),
-    });
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      run.id, run.started_at, run.completed_at ?? null,
+      JSON.stringify(run.sources_checked), run.opportunities_found,
+      run.opportunities_scored, run.proposals_generated,
+      JSON.stringify(run.actions_taken), JSON.stringify(run.errors), run.status,
+    ]);
   }
 
   getRecentPipelineRuns(limit = 10): PipelineRun[] {
@@ -314,6 +316,17 @@ class OpportunityDatabase {
       tags: JSON.parse(row.tags as string || "[]"),
       remote: row.remote === 1,
     };
+  }
+
+  clearAll(): void {
+    this.db.exec(`
+      DELETE FROM proposals;
+      DELETE FROM outcomes;
+      DELETE FROM pipeline_runs;
+      DELETE FROM feedback_insights;
+      DELETE FROM opportunities;
+    `);
+    logger.info("[DB] All data cleared — fresh start");
   }
 
   close(): void {
