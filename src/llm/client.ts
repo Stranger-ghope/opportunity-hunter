@@ -41,6 +41,18 @@ class LLMClient {
     this.circuitOpen = false;
   }
 
+  getStatus() {
+    return {
+      endpoint: this.baseUrl,
+      model: this.modelName,
+      provider: this.provider,
+      circuitOpen: this.circuitOpen,
+      consecutiveFailures: this.consecutiveFailures,
+      threshold: this.CIRCUIT_THRESHOLD,
+      healthy: !this.circuitOpen,
+    };
+  }
+
   constructor() {
     this.provider = (process.env.INFERENCE_PROVIDER as InferenceProvider) || "nosana";
     this.modelName = process.env.MODEL_NAME || "Qwen/Qwen2.5-72B-Instruct-AWQ";

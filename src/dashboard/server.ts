@@ -20,6 +20,8 @@ import { ingestStructured } from "../agents/sources/manualAgent";
 import { runScoringAgent } from "../agents/scoringAgent";
 import { runActionAgent } from "../agents/actionAgent";
 import { runProposalAgent } from "../agents/proposalAgent";
+import { llmClient } from "../llm/client";
+import { embeddingClient } from "../llm/embeddingClient";
 import { recordOutcome, runFeedbackAgent } from "../agents/feedbackAgent";
 import { logger } from "../utils/logger";
 import profileConfig from "../../config/profile.json";
@@ -209,6 +211,20 @@ app.post("/api/ingest", (req: Request, res: Response) => {
     } catch (err) {
       logger.warn(`[Ingest] Scoring failed for "${opp.title}": ${err}`);
     }
+  });
+});
+
+// ── Nosana Infrastructure Health ──────────────
+
+app.get("/api/infrastructure", (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: {
+      network: "Nosana Decentralized GPU Network",
+      llm: llmClient.getStatus(),
+      embedding: embeddingClient.getStatus(),
+      pipeline: db.getStats(),
+    },
   });
 });
 

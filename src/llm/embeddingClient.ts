@@ -88,6 +88,17 @@ class EmbeddingClient {
   isAvailable() {
     return !this.circuitOpen && !!this.http.defaults.baseURL;
   }
+
+  getStatus() {
+    return {
+      endpoint: this.http.defaults.baseURL || "not configured",
+      model: this.model,
+      circuitOpen: this.circuitOpen,
+      profileCached: this.profileEmbedding !== null,
+      dimensions: parseInt(process.env.OPENAI_EMBEDDING_DIMENSIONS || "1024", 10),
+      healthy: !this.circuitOpen && !!this.http.defaults.baseURL,
+    };
+  }
 }
 
 export const embeddingClient = new EmbeddingClient();

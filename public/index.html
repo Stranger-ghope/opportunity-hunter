@@ -82,6 +82,7 @@
   <button class="tab-btn" onclick="showTab('pipeline', this)">Pipeline Runs</button>
   <button class="tab-btn" onclick="showTab('ingest', this)">Manual Ingest</button>
   <button class="tab-btn" onclick="showTab('insights', this)">Insights</button>
+  <button class="tab-btn" onclick="showTab('infrastructure', this)">🖥 Infrastructure</button>
   <button class="tab-btn" onclick="showTab('profile', this)">⚙ Profile</button>
 </div>
 
@@ -205,6 +206,17 @@
     </div>
   </div>
 
+  <!-- Infrastructure Tab -->
+  <div id="tab-infrastructure" class="hidden">
+    <div class="mb-4">
+      <h3 class="text-white font-semibold text-base">Nosana Decentralized GPU Network</h3>
+      <p class="text-xs text-slate-500 mt-1">Live status of inference and embedding endpoints powering this agent</p>
+    </div>
+    <div id="infraContent" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="card p-6 text-center text-slate-500">Loading...</div>
+    </div>
+  </div>
+
 </main>
 
 <!-- Opportunity Detail Modal -->
@@ -288,6 +300,54 @@ async function loadStats() {
 async function loadPipelineRuns() {
   const data = await api('GET', '/api/pipeline/runs');
   renderPipelineRuns(data.data || []);
+}
+
+async function loadInfrastructure() {
+  const data = await api('GET', '/api/infrastructure');
+  if (!data.success) return;
+  const { llm, embedding } = data.data;
+  document.getElementById('infraContent').innerHTML = `
+    <div class="card p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">LLM Inference</p>
+          <p class="text-white font-semibold">${llm.model}</p>
+        </div>
+        <span class="flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full ${llm.healthy ? 'text-green-400 bg-green-400/10 border border-green-400/20' : 'text-red-400 bg-red-400/10 border border-red-400/20'}">
+          <span class="w-2 h-2 rounded-full ${llm.healthy ? 'bg-green-400 animate-pulse' : 'bg-red-400'}"></span>
+          ${llm.healthy ? 'HEALTHY' : 'CIRCUIT OPEN'}
+        </span>
+      </div>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between"><span class="text-slate-500">Provider</span><span class="text-slate-300 capitalize">${llm.provider}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Consecutive Failures</span><span class="${llm.consecutiveFailures > 0 ? 'text-yellow-400' : 'text-green-400'}">${llm.consecutiveFailures} / ${llm.threshold}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Circuit Breaker</span><span class="${llm.circuitOpen ? 'text-red-400' : 'text-green-400'}">${llm.circuitOpen ? 'OPEN (paused)' : 'CLOSED (active)'}</span></div>
+      </div>
+      <div class="pt-2 border-t border-[#2a2d3e]">
+        <p class="text-xs text-slate-600 break-all">${llm.endpoint}</p>
+      </div>
+    </div>
+    <div class="card p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Semantic Embeddings</p>
+          <p class="text-white font-semibold">${embedding.model}</p>
+        </div>
+        <span class="flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full ${embedding.healthy ? 'text-green-400 bg-green-400/10 border border-green-400/20' : 'text-red-400 bg-red-400/10 border border-red-400/20'}">
+          <span class="w-2 h-2 rounded-full ${embedding.healthy ? 'bg-green-400 animate-pulse' : 'bg-red-400'}"></span>
+          ${embedding.healthy ? 'HEALTHY' : 'UNAVAILABLE'}
+        </span>
+      </div>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between"><span class="text-slate-500">Dimensions</span><span class="text-slate-300">${embedding.dimensions}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Profile Cached</span><span class="${embedding.profileCached ? 'text-green-400' : 'text-slate-400'}">${embedding.profileCached ? 'Yes' : 'Not yet'}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Use Case</span><span class="text-slate-300">Semantic scoring fallback</span></div>
+      </div>
+      <div class="pt-2 border-t border-[#2a2d3e]">
+        <p class="text-xs text-slate-600 break-all">${embedding.endpoint}</p>
+      </div>
+    </div>
+  `;
 }
 
 async function loadInsights() {
@@ -523,6 +583,7 @@ function showTab(tab, btn) {
   if (tab === 'insights') loadInsights();
   if (tab === 'pipeline') loadPipelineRuns();
   if (tab === 'profile') loadProfile();
+  if (tab === 'infrastructure') loadInfrastructure();
 }
 
 function updateStats(stats) {
