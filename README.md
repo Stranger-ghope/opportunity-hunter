@@ -1,10 +1,12 @@
 # 🎯 Opportunity Hunter — Autonomous Multi-Agent System
 
-An autonomous AI agent system built on **ElizaOS v2** that discovers, scores, and applies to freelance opportunities, jobs, bounties, and contracts — with minimal human intervention.
+An autonomous AI agent system built on **ElizaOS v2** that discovers, scores, and applies to freelance accounting and finance opportunities — with minimal human intervention.
 
-Runs on **Nosana** (decentralized GPU network) using **Qwen3.5-27B-AWQ-4bit** for inference.
+Runs on **Nosana's decentralized GPU network** using:
+- **Qwen3.5-27B-AWQ-4bit** for LLM inference
+- **Qwen3-Embedding-0.6B** for semantic similarity scoring (RAG/retrieval)
 
-🌐 **Live Demo:** https://46v9hl1xjg7kd4tvzodyvl2njptvrql289qiayscvrru.node.k8s.prd.nos.ci/
+🌐 **Live Demo:** [Deploy your own on Nosana]
 
 ---
 
@@ -17,10 +19,10 @@ Runs on **Nosana** (decentralized GPU network) using **Qwen3.5-27B-AWQ-4bit** fo
            │
     ┌──────▼──────────────────────────────────────────┐
     │              PHASE 1: SOURCE AGENTS              │
-    │  ┌──────────┐ ┌──────────┐ ┌────────┐ ┌──────┐ │
-    │  │ RSS Agent│ │ Reddit   │ │ Email  │ │Manual│ │
-    │  │ (7 feeds)│ │ (5 subs) │ │ (IMAP) │ │Input │ │
-    │  └──────────┘ └──────────┘ └────────┘ └──────┘ │
+    │  ┌──────────┐ ┌──────────┐ ┌──────┐            │
+    │  │ RSS Agent│ │ Reddit   │ │Manual│            │
+    │  │(category)│ │(niche)   │ │Input │            │
+    │  └──────────┘ └──────────┘ └──────┘            │
     └──────────────────────┬──────────────────────────┘
                            │ raw Opportunity[]
     ┌──────────────────────▼──────────────────────────┐
@@ -34,12 +36,12 @@ Runs on **Nosana** (decentralized GPU network) using **Qwen3.5-27B-AWQ-4bit** fo
     │  LLM scores on 5 dimensions (0-100):            │
     │  skill_match | budget | urgency |               │
     │  competition | relevance                        │
-    │  + Self-improvement from feedback history       │
+    │  + Embedding fallback when LLM unavailable      │
     └──────────────────────┬──────────────────────────┘
                            │ scored Opportunity[]
     ┌──────────────────────▼──────────────────────────┐
     │           PHASE 4: ACTION AGENT                  │
-    │  APPLY (score ≥ threshold) │ SAVE │ IGNORE      │
+    │  APPLY (score ≥ 55) │ SAVE │ IGNORE              │
     │  LLM reasoning + fast-path rules                │
     └──────────────────────┬──────────────────────────┘
                            │ APPLY list
@@ -47,7 +49,7 @@ Runs on **Nosana** (decentralized GPU network) using **Qwen3.5-27B-AWQ-4bit** fo
     │    PHASE 5: PROPOSAL AGENT + CRITIC AGENT        │
     │  ProposalAgent: writes tailored application     │
     │  CriticAgent: reviews, scores, improves         │
-    │  → Proposal v2 stored, ready for human review   │
+    │  → Proposal ready for human review              │
     └──────────────────────┬──────────────────────────┘
                            │
     ┌──────────────────────▼──────────────────────────┐
@@ -60,19 +62,54 @@ Runs on **Nosana** (decentralized GPU network) using **Qwen3.5-27B-AWQ-4bit** fo
 
 ---
 
+## Deep Nosana Integration
+
+This project demonstrates comprehensive integration with Nosana's decentralized infrastructure:
+
+### Dual-Endpoint Architecture
+| Endpoint | Model | Use Case |
+|----------|-------|----------|
+| LLM Inference | Qwen3.5-27B-AWQ-4bit | Scoring, proposals, actions |
+| Embeddings | Qwen3-Embedding-0.6B (1024-dim) | Semantic similarity fallback |
+
+### Circuit Breaker Pattern
+Both clients implement circuit breakers to handle infrastructure instability:
+- Tracks consecutive failures per endpoint
+- Opens circuit after 5 failures → fast fail, no hanging requests
+- Resets at pipeline start for fresh attempt
+- Visible on Infrastructure dashboard tab
+
+### Graceful Degradation
+When LLM inference is unavailable:
+1. Circuit opens → stops retrying failing endpoint
+2. Scoring falls back to **cosine similarity** from embeddings
+3. Semantic relevance dimension uses profile vs. job embedding comparison
+4. Pipeline continues with degraded-but-functional scoring
+
+### Infrastructure Monitoring
+Live dashboard tab shows:
+- Endpoint health (healthy/unavailable)
+- Circuit breaker state (open/closed)
+- Consecutive failure count
+- Profile embedding cache status
+- Exact Nosana node URLs
+
+---
+
 ## Project Structure
 
 ```
 opportunity-hunter/
+├── characters/
+│   └── agent.character.json         # ElizaOS agent character definition
 ├── src/
 │   ├── agents/
 │   │   ├── sources/
-│   │   │   ├── rssAgent.ts          # RSS/Atom feed ingestion
-│   │   │   ├── redditAgent.ts       # Reddit API ingestion
-│   │   │   ├── emailAgent.ts        # IMAP email parsing
+│   │   │   ├── rssAgent.ts          # RSS/Atom feed ingestion (profile-specific)
+│   │   │   ├── redditAgent.ts       # Reddit API ingestion (niche subreddits)
 │   │   │   └── manualAgent.ts       # Manual text/JSON import
 │   │   ├── normalizationAgent.ts    # Schema enforcement + dedup
-│   │   ├── scoringAgent.ts          # LLM-powered 5-dim scoring
+│   │   ├── scoringAgent.ts          # LLM-powered 5-dim scoring + embedding fallback
 │   │   ├── proposalAgent.ts         # Tailored proposal generation
 │   │   ├── criticAgent.ts           # Proposal review + improvement
 │   │   ├── actionAgent.ts           # APPLY/SAVE/IGNORE decisions
@@ -80,30 +117,26 @@ opportunity-hunter/
 │   ├── dashboard/
 │   │   └── server.ts                # Express + Socket.IO API
 │   ├── eliza/
-│   │   └── characters.ts            # ElizaOS agent character defs
+│   │   ├── agent.ts                 # Main ElizaOS agent setup
+│   │   ├── characters.ts            # Character orchestrator
+│   │   └── plugin.ts                # Plugin actions (RUN_OPPORTUNITY_PIPELINE, etc.)
 │   ├── llm/
-│   │   └── client.ts                # Unified LLM client (Nosana/Ollama/OpenAI)
+│   │   ├── client.ts                # LLM client with circuit breaker (Nosana/Ollama/OpenAI)
+│   │   └── embeddingClient.ts       # Embedding client for semantic similarity (Nosana)
 │   ├── memory/
 │   │   └── database.ts              # SQLite persistence layer
-│   ├── prompts/
-│   │   ├── scoring.ts               # Scoring prompt templates
-│   │   ├── proposal.ts              # Proposal prompt templates
-│   │   ├── critic.ts                # Critic prompt templates
-│   │   └── action.ts                # Action decision prompts
-│   ├── types/
-│   │   └── index.ts                 # Shared TypeScript types
-│   ├── utils/
-│   │   └── logger.ts                # Winston logger
 │   ├── pipeline.ts                  # Main pipeline orchestrator
 │   └── index.ts                     # Entry point + scheduler
 ├── config/
-│   ├── profile.json                 # YOUR profile (edit this!)
+│   ├── profile.json                 # User profile (accountant, 8 years exp)
 │   └── sources.json                 # Feed/subreddit configuration
 ├── public/
-│   └── index.html                   # Web dashboard
+│   └── index.html                   # Web dashboard (real-time updates)
+├── nos_job_def/
+│   └── nosana_eliza_job_definition.json  # Official Nosana deployment config
 ├── Dockerfile
 ├── docker-compose.yml
-├── nosana.yml                        # Nosana job definition
+├── nosana.yml                        # Nosana job definition (YAML format)
 └── .env.example
 ```
 
@@ -128,32 +161,42 @@ cp .env.example .env
 Edit `.env` with your credentials:
 
 ```env
-# Required: pick one inference provider
+# Required: Nosana inference endpoints
 INFERENCE_PROVIDER=nosana
-NOSANA_API_KEY=your_key_here
-MODEL_NAME=Qwen/Qwen2.5-72B-Instruct-AWQ
+NOSANA_API_URL=https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1
+OPENAI_API_URL=https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1
+OPENAI_API_KEY=nosana
+MODEL_NAME=Qwen3.5-27B-AWQ-4bit
+
+# Required: Nosana embedding endpoint (semantic similarity scoring)
+OPENAI_EMBEDDING_URL=https://4yiccatpyxx773jtewo5ccwhw1s2hezq5pehndb6fcfq.node.k8s.prd.nos.ci/v1
+OPENAI_EMBEDDING_API_KEY=nosana
+OPENAI_EMBEDDING_MODEL=Qwen3-Embedding-0.6B
+OPENAI_EMBEDDING_DIMENSIONS=1024
 
 # Optional: Reddit API (public posts work without auth)
 REDDIT_CLIENT_ID=your_id
 REDDIT_CLIENT_SECRET=your_secret
-
-# Optional: Email alerts (Gmail app password)
-EMAIL_USER=you@gmail.com
-EMAIL_PASSWORD=your_app_password
-EMAIL_HOST=imap.gmail.com
 ```
 
-**Edit your profile** at `config/profile.json`:
+**Edit your profile** at `config/profile.json` (default: Freelance Accountant):
 
 ```json
 {
-  "name": "Your Name",
-  "title": "Your Title",
-  "skills": ["TypeScript", "Python", "React"],
-  "niches": ["AI development", "Web3"],
-  "hourly_rate_min": 75,
-  "hourly_rate_max": 150,
-  "bio": "Your 2-3 sentence pitch..."
+  "name": "Jordan Mitchell",
+  "title": "Freelance Accountant & Financial Analyst",
+  "bio": "CPA-certified accountant with 8 years of experience serving startups and growing businesses...",
+  "skills": [
+    "Accounting", "QuickBooks", "GAAP", "Financial Reporting",
+    "Budgeting", "Forecasting", "Tax Preparation", "Bookkeeping",
+    "Financial Analysis", "Payroll", "Excel", "Cash Flow Management"
+  ],
+  "experience_years": 8,
+  "niches": ["Startup Accounting", "Financial Analysis", "Remote Bookkeeping"],
+  "hourly_rate_min": 45,
+  "hourly_rate_max": 85,
+  "tone": "professional",
+  "avoid_keywords": ["unpaid", "equity only", "intern"]
 }
 ```
 
@@ -179,15 +222,25 @@ Open **http://localhost:3000** to see the dashboard.
 
 ## Inference Providers
 
-### Option A: Nosana (recommended — decentralized GPU)
+### Nosana Decentralized GPU (Required for Competition)
+
 ```env
 INFERENCE_PROVIDER=nosana
 NOSANA_API_URL=https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1
-NOSANA_API_KEY=nosana
+OPENAI_API_URL=https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1
+OPENAI_API_KEY=nosana
 MODEL_NAME=Qwen3.5-27B-AWQ-4bit
 ```
 
-### Option B: Local Ollama
+**Dual Endpoint Setup:**
+| Variable | Endpoint | Purpose |
+|----------|----------|---------|
+| `NOSANA_API_URL` | LLM inference | Scoring, proposals, action decisions |
+| `OPENAI_EMBEDDING_URL` | Embedding inference | Semantic similarity fallback |
+
+The embedding endpoint (`Qwen3-Embedding-0.6B`) provides 1024-dimensional vectors for cosine similarity scoring when the LLM is unavailable due to circuit breaker or 503 errors.
+
+### Local Development (Ollama)
 ```bash
 ollama pull qwen2.5:72b
 ```
@@ -195,13 +248,6 @@ ollama pull qwen2.5:72b
 INFERENCE_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
 MODEL_NAME=qwen2.5:72b
-```
-
-### Option C: OpenAI (fallback)
-```env
-INFERENCE_PROVIDER=openai
-OPENAI_API_KEY=sk-...
-MODEL_NAME=gpt-4o-mini
 ```
 
 ---
@@ -240,21 +286,42 @@ The web dashboard at **http://localhost:3000** provides:
 
 | Feature | Description |
 |---------|-------------|
-| **Opportunities list** | All discovered opps with scores, source, budget, skills |
+| **Opportunities** | All discovered opps with scores, source, budget, skills. Filter by status. |
 | **Score breakdown** | Per-dimension scores + LLM reasoning |
-| **Proposal viewer** | Full proposal + critic-improved version |
-| **Approve/Reject** | Human-in-the-loop action confirmation |
-| **Outcome recording** | Mark accepted/rejected to train the feedback loop |
-| **Pipeline runner** | Trigger runs manually |
-| **Insights tab** | Feedback agent's learning report |
-| **Manual ingest** | Paste any job posting for immediate processing |
+| **Proposal viewer** | Full proposal + human-in-the-loop actions (APPLY/SAVE/IGNORE) |
+| **Pipeline Runs** | History of all pipeline runs with found/scored/proposal counts |
+| **Manual Ingest** | Paste any job posting for immediate scoring and processing |
+| **Insights** | Feedback agent's learning report from recorded outcomes |
+| **Infrastructure** | **Live Nosana endpoint health** — circuit breaker status, LLM/embedding availability |
+| **Profile** | Edit your skills, experience, niches, avoid keywords |
 
 ### Opportunity Actions
 
 - **✅ Approve** — marks as applied, ready for outcome tracking
-- **🗑️ Ignore** — removes from active pipeline
+- **🗑️ Ignore** — removes from active pipeline  
 - **🏆 Accepted** — records positive outcome, feeds learning loop
 - **❌ Rejected** — records negative outcome, adjusts scoring bias
+
+### Infrastructure Monitoring
+
+The **Infrastructure** tab shows real-time status:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  LLM Inference (Qwen3.5-27B-AWQ-4bit)               │
+│  Status: ⚠️ CIRCUIT OPEN                             │
+│  Failures: 5/5 threshold                           │
+│  Endpoint: 6vq2...node.k8s.prd.nos.ci               │
+├─────────────────────────────────────────────────────┤
+│  Semantic Embeddings (Qwen3-Embedding-0.6B)          │
+│  Status: ✅ HEALTHY                                  │
+│  Dimensions: 1024                                  │
+│  Profile cached: Yes                                │
+│  Endpoint: 4yicc...node.k8s.prd.nos.ci            │
+└─────────────────────────────────────────────────────┘
+```
+
+This demonstrates **graceful degradation**: when LLM is unavailable, scoring falls back to embedding-based cosine similarity.
 
 ---
 
@@ -271,8 +338,8 @@ Each opportunity receives a score of **0–100** from 5 dimensions:
 | `relevance` | 20 | Alignment with your niches and preferences |
 
 **Thresholds** (configurable via env):
-- `SCORE_THRESHOLD=60` → APPLY if score ≥ 60
-- `IGNORE_THRESHOLD` → auto-computed as 60% of SCORE_THRESHOLD
+- `SCORE_THRESHOLD=55` → APPLY if score ≥ 55
+- `IGNORE_THRESHOLD` → auto-computed as 60% of SCORE_THRESHOLD (~33)
 
 ---
 
@@ -303,42 +370,42 @@ After ~5-10 outcomes, the system starts adapting:
 ════════════════════════════════════════════════════════════
 
 📥 PHASE 1: Source ingestion
-[RSS Agent] HackerNews Hiring: 3 new opportunities
-[RSS Agent] RemoteOK RSS: 7 new opportunities
-[RSS Agent] Crypto Jobs List RSS: 4 new opportunities
-[Reddit Agent] r/forhire: 6 new
-[Reddit Agent] r/ethereum: 2 new
-  Raw opportunities collected: 22
+[DynamicSources] Matched categories: finance
+[RSS Agent] RemoteOK - finance: 55 new opportunities
+[Reddit Agent] r/Accounting: 3 new
+[Reddit Agent] r/taxpros: 2 new
+  Raw opportunities collected: 60
 
 🔄 PHASE 2: Normalization
-[Normalizer] 18 normalized | 3 duplicates | 1 filtered
+[Normalizer] 60 normalized | 0 duplicates | 0 filtered
 
 🎯 PHASE 3: Scoring
-[Scorer] "Senior Solidity Dev - DeFi Protocol" → 89/100 (web3,high_budget,low_competition)
-[Scorer] "TypeScript API Engineer" → 74/100 (strong_match)
-[Scorer] "React Frontend Dev" → 61/100 (remote_friendly)
+[Scorer] "Freelance Accountant - Monthly Bookkeeping" → 78/100 (accounting,remote,ongoing)
+[Scorer] "CPA Needed - Tax Preparation (Q1 2026)" → 82/100 (cpa,tax,high_budget)
+[Scorer] "Financial Analyst - Startup" → 75/100 (analysis,forecasting)
 
   Top opportunities:
-  [89] Senior Solidity Dev - DeFi Protocol (rss:Crypto Jobs List RSS)
-  [84] ElizaOS Agent Builder - Remote (reddit:r/ethereum)
-  [74] TypeScript API Engineer (rss:HackerNews Hiring)
+  [82] CPA Needed - Tax Preparation (rss:RemoteOK)
+  [78] Freelance Accountant - Monthly Bookkeeping (rss:RemoteOK)
+  [75] Financial Analyst - Startup (reddit:r/Accounting)
 
 ⚡ PHASE 4: Action decisions
-  APPLY: 3 | SAVE: 8 | IGNORE: 7
+[Action Agent] "CPA Needed" → APPLY (82% confidence)
+[Action Agent] "Freelance Accountant" → APPLY (78% confidence)
+  APPLY: 21 | SAVE: 37 | IGNORE: 2
 
-✍️  PHASE 5: Proposal generation (3 opportunities)
-[Proposal Agent] Generated 312 words for "Senior Solidity Dev"
-[Critic Agent] "Senior Solidity Dev" — critic score: 8/10, 1 issue fixed
-[Proposal Agent] Generated 287 words for "ElizaOS Agent Builder"
-[Critic Agent] "ElizaOS Agent Builder" — critic score: 9/10, 0 issues
+✍️  PHASE 5: Proposal generation (21 opportunities)
+[Proposal Agent] Generated 298 words for "CPA Needed"
+[Critic Agent] Reviewed, score: 8/10 → passes
 
 📊 PHASE 6: Feedback analysis
-[Feedback Agent] Insights: 4/12 accepted (33%)
+[Feedback Agent] Running insight analysis...
+[Feedback Agent] Not enough outcomes yet (need 3+). Returning defaults.
 
 ════════════════════════════════════════════════════════════
-✅ Pipeline complete in 47s
-   Found: 18 | Scored: 18 | Proposals: 3
-   Actions: APPLY=3 SAVE=8 IGNORE=7
+✅ Pipeline complete in 59s
+   Found: 60 | Scored: 60 | Proposals: 21
+   Actions: APPLY=21 SAVE=37 IGNORE=2
 ════════════════════════════════════════════════════════════
 ```
 
@@ -365,9 +432,11 @@ After ~5-10 outcomes, the system starts adapting:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `INFERENCE_PROVIDER` | `nosana` | nosana / ollama / openai |
-| `MODEL_NAME` | `Qwen3.5-27B-AWQ-4bit` | LLM model |
+| `MODEL_NAME` | `Qwen3.5-27B-AWQ-4bit` | LLM model for inference |
+| `OPENAI_EMBEDDING_MODEL` | `Qwen3-Embedding-0.6B` | Embedding model for semantic similarity |
+| `OPENAI_EMBEDDING_DIMENSIONS` | `1024` | Embedding vector dimensions |
 | `PIPELINE_INTERVAL_MINUTES` | `30` | How often to run |
-| `SCORE_THRESHOLD` | `60` | Min score to APPLY |
+| `SCORE_THRESHOLD` | `55` | Min score to APPLY |
 | `DASHBOARD_PORT` | `3000` | Dashboard server port |
 | `DATA_DIR` | `./data` | SQLite + logs directory |
 | `LOG_LEVEL` | `info` | debug / info / warn / error |
@@ -376,31 +445,50 @@ After ~5-10 outcomes, the system starts adapting:
 
 ## Differentiation Features
 
-### 1. Self-Improving Scoring System
+### 1. Deep Nosana Integration (Competition Focus)
+
+**Dual-Endpoint Architecture:** Uses both Nosana-hosted endpoints:
+- **Qwen3.5-27B-AWQ-4bit** for LLM inference (scoring, proposals)
+- **Qwen3-Embedding-0.6B** for semantic similarity (RAG fallback)
+
+**Circuit Breaker Pattern:** Production-grade resilience:
+- Tracks consecutive failures per endpoint
+- Opens circuit after 5 failures → stops hanging requests
+- Resets at each pipeline run for fresh attempts
+- Live dashboard shows open/closed status
+
+**Graceful Degradation:** When LLM is unavailable:
+- Circuit opens → fast fail, no retries
+- Scoring falls back to **embedding-based cosine similarity**
+- Pipeline continues with semantic relevance scoring
+- Judges can see real-time infrastructure health
+
+### 2. Self-Improving Scoring System
 The Feedback Agent analyzes outcomes and adjusts scoring context:
 - Identifies which dimensions predict wins
 - Passes historical insights to the Scoring Agent on every run
 - Computes scoring bias adjustments from accepted vs rejected ratios
 
-### 2. Proposal Optimization Loop (Critic Agent)
+### 3. Proposal Optimization Loop (Critic Agent)
 Every generated proposal goes through a second LLM pass:
 - Scores the proposal quality 1–10
 - Lists specific issues (generic opener, weak CTA, etc.)
 - Produces an improved version with explicit change log
 - Dashboard shows both original and improved versions
 
-### 3. Human-in-the-Loop Approval System
+### 4. Human-in-the-Loop Approval System
 The Action Agent recommends but doesn't auto-send:
 - Dashboard lets you review proposals before marking "applied"
 - Outcome recording feeds directly into feedback loop
 - Transparent reasoning log for every decision
 
-### 4. Transparent Reasoning Logs
-Every score and decision includes:
-- Per-dimension score breakdown
-- LLM reasoning in plain English
-- Flags (urgent, high_budget, low_competition, etc.)
-- Decision confidence percentage
+### 5. Infrastructure Observability
+Live dashboard tab showing:
+- Endpoint health (healthy/circuit open)
+- Consecutive failure count
+- Profile embedding cache status
+- Exact Nosana node URLs
+- Circuit breaker threshold status
 
 ---
 
