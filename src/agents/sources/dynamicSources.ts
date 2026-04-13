@@ -40,20 +40,12 @@ const WWR_CATEGORIES: [RegExp, string, string][] = [];
 // ─────────────────────────────────────────────
 // Niche subreddit mapping
 // ─────────────────────────────────────────────
+// Only include subreddits that are actual job boards (not Q&A/discussion communities)
 const NICHE_SUBREDDITS: [RegExp, string[]][] = [
-  [/account|bookkeep|cpa|quickbooks|xero/i, ["bookkeeping", "accounting", "smallbusiness"]],
-  [/tax|irs|audit/i, ["tax", "accounting"]],
-  [/financ|invest|budget/i, ["personalfinance", "financialplanning", "smallbusiness"]],
-  [/payroll|hr\b|human.resource/i, ["humanresources"]],
-  [/software|developer|programming/i, ["cscareerquestions", "webdev"]],
-  [/data.?sci|ml\b|ai\b/i, ["datascience", "MachineLearning"]],
-  [/design|graphic|ui\b|ux\b/i, ["graphic_design", "UI_Design"]],
-  [/market|seo|content/i, ["digital_marketing", "SEO"]],
-  [/writ|content.creat|copywrite/i, ["freelanceWriters", "writing"]],
-  [/civil|structural|construction/i, ["civilengineering", "engineering"]],
-  [/legal|attorney|paralegal/i, ["law", "paralegal"]],
-  [/sales|business.dev/i, ["sales", "Entrepreneur"]],
-  [/medical|health|nurs|pharma/i, ["nursing", "medicine"]],
+  [/software|developer|programming|engineer/i, ["forhire"]],
+  [/design|graphic|ui\b|ux\b/i, ["forhire"]],
+  [/writ|content|copywrite/i, ["forhire"]],
+  [/market|seo/i, ["forhire"]],
 ];
 
 // ─────────────────────────────────────────────

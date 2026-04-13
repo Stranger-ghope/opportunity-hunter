@@ -126,7 +126,7 @@ class LLMClient {
 
         const isTransient = status === 503 || status === 502 || status === 429;
 
-        if (isTransient && attempt < MAX_RETRIES) {
+        if (isTransient && attempt < maxAttempts - 1) {
           const delay = RETRY_DELAYS[attempt];
           logger.warn(`[LLM] ${status} transient error (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${delay / 1000}s...`);
           await new Promise((r) => setTimeout(r, delay));

@@ -22,20 +22,46 @@ export function runNormalizationAgent(
   let filtered = 0;
   let duplicates = 0;
 
+  const MAX_AGE_DAYS = 14;
+  const cutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+  let stale = 0;
+
   const total = rawOpportunities.length;
   for (let idx = 0; idx < total; idx++) {
     const raw = rawOpportunities[idx];
     if (idx > 0 && idx % 25 === 0) {
       logger.info(`[Normalizer] Progress: ${idx}/${total} processed...`);
     }
-    // 1. Skip if URL already exists in DB
+
+    // 1. Skip stale opportunities (older than 14 days)
+    const dateStr = raw.timestamp;
+    if (dateStr) {
+      const posted = new Date(dateStr).getTime();
+      if (!isNaN(posted) && posted < cutoff) {
+        stale++;
+        continue;
+      }
+    }
+
+    // 2. Skip if URL already exists in DB
     if (raw.url && raw.url.startsWith("http") && db.opportunityExistsByUrl(raw.url)) {
       duplicates++;
       continue;
     }
 
-    // 2. Apply avoid-keyword filter (word-boundary match to prevent "intern" matching "internal")
     const titleLower = raw.title.toLowerCase();
+
+    // 3. For Reddit sources, require hiring-intent signals in title
+    if (raw.source?.startsWith("reddit:")) {
+      const HIRING_SIGNALS = ["hiring", "looking for", "need a", "need an", "want a", "seeking", "help wanted", "paying", "[for hire]", "[hiring]", "budget", "freelancer needed", "contractor needed"];
+      const hasHiringIntent = HIRING_SIGNALS.some((s) => titleLower.includes(s));
+      if (!hasHiringIntent) {
+        filtered++;
+        continue;
+      }
+    }
+
+    // 4. Apply avoid-keyword filter (word-boundary match to prevent "intern" matching "internal")
     const hitAvoidWord = profile.avoid_keywords.some((kw) => {
       const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const pattern = new RegExp(`\\b${escaped}\\b`, "i");
@@ -67,7 +93,7 @@ export function runNormalizationAgent(
   }
 
   logger.info(
-    `[Normalizer] ${results.length} normalized | ${duplicates} duplicates | ${filtered} filtered`
+    `[Normalizer] ${results.length} normalized | ${duplicates} duplicates | ${filtered} filtered | ${stale} stale (>14d)`
   );
   return results;
 }
