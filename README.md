@@ -2,7 +2,9 @@
 
 An autonomous AI agent system built on **ElizaOS v2** that discovers, scores, and applies to freelance opportunities, jobs, bounties, and contracts — with minimal human intervention.
 
-Runs on **Nosana** (decentralized GPU network) using **Qwen2.5-72B-AWQ-4bit** for inference.
+Runs on **Nosana** (decentralized GPU network) using **Qwen3.5-27B-AWQ-4bit** for inference.
+
+🌐 **Live Demo:** https://46v9hl1xjg7kd4tvzodyvl2njptvrql289qiayscvrru.node.k8s.prd.nos.ci/
 
 ---
 
@@ -180,9 +182,9 @@ Open **http://localhost:3000** to see the dashboard.
 ### Option A: Nosana (recommended — decentralized GPU)
 ```env
 INFERENCE_PROVIDER=nosana
-NOSANA_API_URL=https://inference.nosana.io/v1
-NOSANA_API_KEY=your_nosana_api_key
-MODEL_NAME=Qwen/Qwen2.5-72B-Instruct-AWQ
+NOSANA_API_URL=https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1
+NOSANA_API_KEY=nosana
+MODEL_NAME=Qwen3.5-27B-AWQ-4bit
 ```
 
 ### Option B: Local Ollama
@@ -363,7 +365,7 @@ After ~5-10 outcomes, the system starts adapting:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `INFERENCE_PROVIDER` | `nosana` | nosana / ollama / openai |
-| `MODEL_NAME` | `Qwen/Qwen2.5-72B-Instruct-AWQ` | LLM model |
+| `MODEL_NAME` | `Qwen3.5-27B-AWQ-4bit` | LLM model |
 | `PIPELINE_INTERVAL_MINUTES` | `30` | How often to run |
 | `SCORE_THRESHOLD` | `60` | Min score to APPLY |
 | `DASHBOARD_PORT` | `3000` | Dashboard server port |
