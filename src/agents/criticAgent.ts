@@ -42,6 +42,7 @@ export async function runCriticAgent(
       system_prompt: systemPrompt,
       user_prompt: userPrompt,
       temperature: 0.3,
+      no_retry: true,
       max_tokens: 1024,
     });
 

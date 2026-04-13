@@ -65,6 +65,7 @@ export async function runActionAgent(
       user_prompt: userPrompt,
       temperature: 0.2,
       max_tokens: 300,
+      no_retry: true,
     });
 
     const decision = validateDecision(raw.decision);
