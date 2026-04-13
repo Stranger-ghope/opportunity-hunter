@@ -76,12 +76,7 @@ export function generateDynamicSources(profile: UserProfile): {
 function buildRSSFeeds(profileText: string, profile: UserProfile): RSSFeedConfig[] {
   const feeds: RSSFeedConfig[] = [];
 
-  // Profile-specific WWR category feed (no generic firehose)
-  const isAccounting = /account|bookkeep|financ|tax|audit|cpa/i.test(profileText);
-  const wwrCategory = isAccounting
-    ? { name: "We Work Remotely - Finance & Accounting", url: "https://weworkremotely.com/categories/remote-finance-legal-hr-jobs.rss" }
-    : { name: "We Work Remotely - All", url: "https://weworkremotely.com/remote-jobs.rss" };
-  feeds.push({ ...wwrCategory, category: "finance", enabled: true, skill_hints: profile.skills.slice(0, 12) });
+  // WWR category feeds 301-redirect so we skip them; RemoteOK category feeds are used instead
 
   // Match RemoteOK category feeds
   const matchedROK = new Set<string>();
