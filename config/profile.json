@@ -5,6 +5,8 @@
   "hourly_rate_min": 45,
   "hourly_rate_max": 95,
   "skills": [
+    "Accounting",
+    "Finance",
     "Bookkeeping",
     "Tax Preparation",
     "Financial Reporting",
@@ -39,7 +41,7 @@
     "volunteer"
   ],
   "portfolio_url": "https://jordanmitchell.cpa",
-  "experience_years": 1,
+  "experience_years": 8,
   "preferred_project_types": [
     "freelance",
     "contract"

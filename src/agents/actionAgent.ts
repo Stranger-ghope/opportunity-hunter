@@ -40,9 +40,12 @@ export async function runActionAgent(
     return { decision: "IGNORE", reasoning: `Score ${score} below ignore threshold.`, confidence: 95 };
   }
 
-  // Check for avoid keywords — hard block
+  // Check for avoid keywords — hard block (word-boundary to avoid "intern" matching "international")
   const rawLower = (opportunity.title + " " + opportunity.raw_text).toLowerCase();
-  const hitAvoid = profile.avoid_keywords.find((kw) => rawLower.includes(kw.toLowerCase()));
+  const hitAvoid = profile.avoid_keywords.find((kw) => {
+    const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`\\b${escaped}\\b`, "i").test(rawLower);
+  });
   if (hitAvoid) {
     logger.debug(`[Action Agent] IGNORE (avoid keyword: "${hitAvoid}")`);
     persistDecision(opportunity, "IGNORE", `Avoid keyword matched: "${hitAvoid}"`);
