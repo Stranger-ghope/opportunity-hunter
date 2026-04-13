@@ -30,7 +30,7 @@ export async function runActionAgent(
   insights: FeedbackInsights | null = null
 ): Promise<{ decision: ActionDecision; reasoning: string; confidence: number }> {
   const score = opportunity.score ?? 0;
-  const applyThreshold = parseInt(process.env.SCORE_THRESHOLD || "60", 10);
+  const applyThreshold = parseInt(process.env.SCORE_THRESHOLD || "55", 10);
   const ignoreThreshold = Math.floor(applyThreshold * 0.6);
 
   // Fast-path decisions for clear cases (no LLM needed)
