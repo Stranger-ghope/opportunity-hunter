@@ -1,42 +1,34 @@
 {
-  "version": "1",
+  "version": "0.1",
   "type": "container",
-  "meta": {
-    "trigger": "api"
-  },
   "ops": [
     {
-      "id": "opportunity-hunter",
       "type": "container/run",
+      "id": "opportunity-hunter",
       "args": {
-        "image": "cheeseman07/opportunity-hunter:v2",
-        "gpu": false,
+        "image": "cheeseman07/opportunity-hunter:latest",
         "expose": 3000,
-        "env": [
-          "INFERENCE_PROVIDER=nosana",
-          "MODEL_NAME=Qwen3.5-27B-AWQ-4bit",
-          "NOSANA_API_URL=https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1",
-          "OPENAI_API_URL=https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1",
-          "OPENAI_API_KEY=nosana",
-          "OPENAI_EMBEDDING_URL=https://4yiccatpyxx773jtewo5ccwhw1s2hezq5pehndb6fcfq.node.k8s.prd.nos.ci/v1",
-          "OPENAI_EMBEDDING_API_KEY=nosana",
-          "OPENAI_EMBEDDING_MODEL=Qwen3-Embedding-0.6B",
-          "OPENAI_EMBEDDING_DIMENSIONS=1024",
-          "PIPELINE_INTERVAL_MINUTES=60",
-          "SCORE_THRESHOLD=55",
-          "DASHBOARD_PORT=3000",
-          "DATA_DIR=/app/data",
-          "LOG_LEVEL=info"
-        ],
-        "secrets": [
-          "REDDIT_CLIENT_ID",
-          "REDDIT_CLIENT_SECRET"
-        ],
-        "resources": {
-          "memory": "4096Mi",
-          "cpu": 2
+        "gpu": false,
+        "env": {
+          "INFERENCE_PROVIDER": "nosana",
+          "MODEL_NAME": "Qwen3.5-27B-AWQ-4bit",
+          "NOSANA_API_URL": "https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1",
+          "OPENAI_API_URL": "https://6vq2bcqphcansrs9b88ztxfs88oqy7etah2ugudytv2x.node.k8s.prd.nos.ci/v1",
+          "OPENAI_API_KEY": "nosana",
+          "OPENAI_EMBEDDING_URL": "https://4yiccatpyxx773jtewo5ccwhw1s2hezq5pehndb6fcfq.node.k8s.prd.nos.ci/v1",
+          "OPENAI_EMBEDDING_API_KEY": "nosana",
+          "OPENAI_EMBEDDING_MODEL": "Qwen3-Embedding-0.6B",
+          "OPENAI_EMBEDDING_DIMENSIONS": "1024",
+          "PIPELINE_INTERVAL_MINUTES": "60",
+          "SCORE_THRESHOLD": "55",
+          "DASHBOARD_PORT": "3000",
+          "DATA_DIR": "/app/data",
+          "LOG_LEVEL": "info"
         }
       }
     }
-  ]
+  ],
+  "meta": {
+    "trigger": "deployment-manager"
+  }
 }
