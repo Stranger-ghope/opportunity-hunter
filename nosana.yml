@@ -15,7 +15,7 @@ ops:
   - id: opportunity-hunter
     type: container/run
     args:
-      image: cheeseman07/opportunity-hunter:v2
+      image: cheeseman07/opportunity-hunter:latest
       gpu: false                  # No GPU needed — LLM inference goes to external Nosana inference API
       expose: 3000                # Expose dashboard port
       env:
