@@ -6,7 +6,7 @@ Runs on **Nosana's decentralized GPU network** using:
 - **Qwen3.5-27B-AWQ-4bit** for LLM inference
 - **Qwen3-Embedding-0.6B** for semantic similarity scoring (RAG/retrieval)
 
-🌐 **Live Demo:** [Deploy your own on Nosana]
+🌐 **Live Demo:** https://3fz2feoev2kkqvdrc4fjelzthqyuklyxceozuqp48fvq.node.k8s.prd.nos.ci/
 
 ---
 
