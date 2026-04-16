@@ -1,7 +1,6 @@
 # ─────────────────────────────────────────────
 # Nosana Job Definition
 # Deploy the Opportunity Hunter on Nosana decentralized GPU network
-# Docs: https://docs.nosana.io/inference/
 # ─────────────────────────────────────────────
 
 version: "1"
