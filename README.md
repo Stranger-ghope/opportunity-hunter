@@ -16,7 +16,7 @@ The system provides **end-to-end reliability** through a dual-endpoint architect
 - **Qwen3-Embedding-0.6B (1024-dim)** — Semantic similarity scoring and RAG-style relevance fallback
 
 🌐 **Live Demo:** https://3fz2feoev2kkqvdrc4fjelzthqyuklyxceozuqp48fvq.node.k8s.prd.nos.ci/
-📦 **GitHub:** https://github.com/Stranger-ghope/opportunity-hunter
+📦 **GitHub:** https://github.com/Stranger-ghope/agent-challenge/tree/elizaos-challenge
 
 ---
 
