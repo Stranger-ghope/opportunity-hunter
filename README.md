@@ -1,3 +1,5 @@
+> **📌 Official Fork:** This project is also available as a fork of the [official challenge repo](https://github.com/Stranger-ghope/agent-challenge/tree/elizaos-challenge) on the `elizaos-challenge` branch, as required by competition guidelines.
+
 # 🎯 Opportunity Hunter — Autonomous Multi-Agent System
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
